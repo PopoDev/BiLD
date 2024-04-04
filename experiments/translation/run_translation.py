@@ -6,7 +6,6 @@ https://github.com/kssteven418/BigLittleDecoder
 import logging
 import os
 import sys
-import warnings
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -34,6 +33,8 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import check_min_version, send_example_telemetry
 
+from models import T5BiLDModel
+
 # Will error if the minimal version of Transformers is not installed. Remove at your own risks.
 check_min_version("4.40.0.dev0")
 
@@ -55,15 +56,40 @@ class ModelArguments:
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
 
-    model_name_or_path: str = field(
-        metadata={
-            "help": "Path to pretrained model or model identifier from huggingface.co/models"
-        }
-    )
-    config_name: Optional[str] = field(
+    model_name_large: Optional[str] = field(
         default=None,
         metadata={
-            "help": "Pretrained config name or path if not the same as model_name"
+            "help": "BiLD Large Model; Path to pretrained model or model identifier from huggingface.co/models"
+        },
+    )
+    model_name_small: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "BiLD Small Model; Path to pretrained model or model identifier from huggingface.co/models"
+        },
+    )
+    config_name_large: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "BiLD Large Config; Pretrained config name or path if not the same as model_name"
+        },
+    )
+    config_name_small: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "BiLD Small Model; Pretrained config name or path if not the same as model_name"
+        },
+    )
+    fallback_threshold: Optional[float] = field(
+        default=None,
+        metadata={
+            "help": "Threshold probability for switching to larger model; for BiLD evaluation"
+        },
+    )
+    rollback_threshold: Optional[float] = field(
+        default=None,
+        metadata={
+            "help": "Threshold probability for rollback to small model predictions; for BiLD evaluation"
         },
     )
     tokenizer_name: Optional[str] = field(
@@ -82,12 +108,6 @@ class ModelArguments:
         default=True,
         metadata={
             "help": "Whether to use one of the fast tokenizer (backed by the tokenizers library) or not."
-        },
-    )
-    model_revision: str = field(
-        default="main",
-        metadata={
-            "help": "The specific model version to use (can be a branch name, tag name or commit id)."
         },
     )
 
@@ -285,17 +305,6 @@ def main():
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-    if model_args.use_auth_token is not None:
-        warnings.warn(
-            "The `use_auth_token` argument is deprecated and will be removed in v4.34. Please use `token` instead.",
-            FutureWarning,
-        )
-        if model_args.token is not None:
-            raise ValueError(
-                "`token` and `use_auth_token` are both specified. Please set only the argument `token`."
-            )
-        model_args.token = model_args.use_auth_token
-
     # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.
     send_example_telemetry("run_translation", model_args, data_args)
@@ -409,33 +418,35 @@ def main():
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
-    config = AutoConfig.from_pretrained(
-        model_args.config_name
-        if model_args.config_name
-        else model_args.model_name_or_path,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        token=model_args.token,
-        trust_remote_code=model_args.trust_remote_code,
-    )
     tokenizer = AutoTokenizer.from_pretrained(
-        model_args.tokenizer_name
-        if model_args.tokenizer_name
-        else model_args.model_name_or_path,
-        cache_dir=model_args.cache_dir,
+        model_args.tokenizer_name,
         use_fast=model_args.use_fast_tokenizer,
-        revision=model_args.model_revision,
-        token=model_args.token,
-        trust_remote_code=model_args.trust_remote_code,
     )
-    model = AutoModelForSeq2SeqLM.from_pretrained(
-        model_args.model_name_or_path,
-        from_tf=bool(".ckpt" in model_args.model_name_or_path),
-        config=config,
+    config_large = AutoConfig.from_pretrained(
+        model_args.config_name_large
+        if model_args.config_name_large
+        else model_args.model_name_large,
+    )
+    config_small = AutoConfig.from_pretrained(
+        model_args.config_name_small
+        if model_args.config_name_small
+        else model_args.model_name_small,
+    )
+    model_large = AutoModelForSeq2SeqLM.from_pretrained(
+        model_args.model_name_large,
+        config=config_large,
         cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        token=model_args.token,
-        trust_remote_code=model_args.trust_remote_code,
+    )
+    model_small = AutoModelForSeq2SeqLM.from_pretrained(
+        model_args.model_name_small,
+        config=config_small,
+        cache_dir=model_args.cache_dir,
+    )
+    model = T5BiLDModel(
+        large=model_large,
+        small=model_small,
+        fallback_threshold=model_args.fallback_threshold,
+        rollback_threshold=model_args.rollback_threshold,
     )
 
     # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
