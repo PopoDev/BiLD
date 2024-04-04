@@ -2,3 +2,7 @@ torch
 transformers
 datasets
 evaluate
+accelerate
+sentencepiece
+protobuf
+sacrebleu

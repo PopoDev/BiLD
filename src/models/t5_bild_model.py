@@ -2,8 +2,8 @@ import copy
 
 import torch
 from torch import nn
-from transformers.generation_utils import GenerationMixin
-from typings import Optional, Tuple
+from transformers import GenerationMixin
+from typing import Optional, Tuple
 
 
 class T5BiLDModel(nn.Module, GenerationMixin):
