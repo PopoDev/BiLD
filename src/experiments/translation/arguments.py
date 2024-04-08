@@ -7,6 +7,12 @@ class ModelArguments:
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
 
+    model_name : Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Path to pretrained model or model identifier from huggingface.co/models"
+        },
+    )
     model_name_large: Optional[str] = field(
         default=None,
         metadata={
