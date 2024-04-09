@@ -159,32 +159,41 @@ def run_translation(parser: HfArgumentParser):
         model_args.tokenizer_name,
         use_fast=model_args.use_fast_tokenizer,
     )
-    config_large = AutoConfig.from_pretrained(
-        model_args.config_name_large
-        if model_args.config_name_large
-        else model_args.model_name_large,
-    )
-    config_small = AutoConfig.from_pretrained(
-        model_args.config_name_small
-        if model_args.config_name_small
-        else model_args.model_name_small,
-    )
-    model_large = AutoModelForSeq2SeqLM.from_pretrained(
-        model_args.model_name_large,
-        config=config_large,
-        cache_dir=model_args.cache_dir,
-    )
-    model_small = AutoModelForSeq2SeqLM.from_pretrained(
-        model_args.model_name_small,
-        config=config_small,
-        cache_dir=model_args.cache_dir,
-    )
-    model = T5BiLDModel(
-        large=model_large,
-        small=model_small,
-        fallback_threshold=model_args.fallback_threshold,
-        rollback_threshold=model_args.rollback_threshold,
-    )
+
+    if model_args.model_name_large and model_args.model_name_small:
+        config_large = AutoConfig.from_pretrained(
+            model_args.config_name_large
+            if model_args.config_name_large
+            else model_args.model_name_large,
+        )
+        config_small = AutoConfig.from_pretrained(
+            model_args.config_name_small
+            if model_args.config_name_small
+            else model_args.model_name_small,
+        )
+        model_large = AutoModelForSeq2SeqLM.from_pretrained(
+            model_args.model_name_large,
+            config=config_large,
+            cache_dir=model_args.cache_dir,
+        )
+        model_small = AutoModelForSeq2SeqLM.from_pretrained(
+            model_args.model_name_small,
+            config=config_small,
+            cache_dir=model_args.cache_dir,
+        )
+        model = T5BiLDModel(
+            large=model_large,
+            small=model_small,
+            fallback_threshold=model_args.fallback_threshold,
+            rollback_threshold=model_args.rollback_threshold,
+        )
+        logger.info("Using BiLD model")
+    else:
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            model_args.model_name,
+            cache_dir=model_args.cache_dir,
+        )
+        logger.info("Using pretrained model")
 
     model.resize_token_embeddings(len(tokenizer))
 
