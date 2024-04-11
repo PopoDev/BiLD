@@ -1,10 +1,16 @@
 import copy
+import logging
 
 import torch
 from torch import nn
-from transformers import GenerationMixin
-from typing import Optional, Tuple
+import torch.distributed as dist
+from transformers import GenerationMixin, LogitsProcessorList, StoppingCriteriaList
+from transformers.generation.utils import GenerateOutput, GenerateNonBeamOutput, GenerationConfig
+from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
+from typing import Optional, Tuple, Union, Callable, List
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
 
 class T5BiLDModel(nn.Module, GenerationMixin):
     def __init__(
@@ -33,6 +39,21 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self.rollback_threshold = rollback_threshold or 5.0
 
         self.crossentropy_loss = nn.CrossEntropyLoss(reduce=False)
+        self.generation_config = GenerationConfig(
+            num_beams=1,
+            temperature=1.0,
+            top_k=50,
+            top_p=1.0,
+            pad_token_id=self.large.config.pad_token_id,
+            eos_token_id=self.large.config.eos_token_id,
+            bos_token_id=1,
+            decoder_start_token_id=self.large.config.decoder_start_token_id,
+            is_encoder_decoder=True,
+            output_scores=True,
+            output_logits=True,
+            _from_model_config=False,
+        )
+        logger.info("BiLD model initialized")
 
     def can_generate(self):
         return True
@@ -73,6 +94,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             self.model_kwargs = self.large_kwargs
         else:  # small
             self.model_kwargs = self.small_kwargs
+        
+        logger.info(f"BiLD init: {self.model_type}")
 
     def schedule_iters(self, fall_back_to_large=False, fall_back_to_small=False):
         """
@@ -95,6 +118,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             self.model_type = "large"
             self.iter_count = self.num_large_iters
             self.model_kwargs = self.large_kwargs
+
+        logger.info(f"BiLD schedule: {self.model_type}")
 
     def forward(
         self,
@@ -146,6 +171,9 @@ class T5BiLDModel(nn.Module, GenerationMixin):
     def resize_token_embeddings(self, n):
         self.large.resize_token_embeddings(n)
         self.small.resize_token_embeddings(n)
+    
+    def can_generate(self):
+        return True
 
     def prepare_inputs_for_generation(
         self,
@@ -181,16 +209,44 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         """
         for kwargs in [self.large_kwargs, self.small_kwargs]:
             new_kwargs = []
-            for layer_past in kwargs["past"]:
-                new_layer_kwargs = []
-                for i, past in enumerate(layer_past):
-                    if i < 2:
-                        new_layer_kwargs.append(past[:, :, : new_len - 1, :])
-                    else:
-                        new_layer_kwargs.append(past)
-                new_kwargs.append(tuple(new_layer_kwargs))
-            kwargs["past"] = tuple(new_kwargs)
+            if kwargs.get("past"):
+                for layer_past in kwargs["past"]:
+                    new_layer_kwargs = []
+                    for i, past in enumerate(layer_past):
+                        if i < 2:
+                            new_layer_kwargs.append(past[:, :, : new_len - 1, :])
+                        else:
+                            new_layer_kwargs.append(past)
+                    new_kwargs.append(tuple(new_layer_kwargs))
+                kwargs["past"] = tuple(new_kwargs)
 
+    def _prepare_encoder_decoder_kwargs_for_generation(
+        self,
+        inputs_tensor: torch.Tensor,
+        model_kwargs,
+        model_input_name: Optional[str] = None,
+    ):
+        logger.info("BiLD prepare encoder decoder kwargs")
+        # 2. prepare encoder args and encoder kwargs from model kwargs
+        irrelevant_prefix = ["decoder_", "cross_attn", "use_cache"]
+        encoder_kwargs = {
+            argument: value
+            for argument, value in model_kwargs.items()
+            if not any(argument.startswith(p) for p in irrelevant_prefix)
+        }
+
+        # 3. make sure that encoder returns `ModelOutput`
+        model_input_name = (
+            model_input_name if model_input_name is not None else self.main_input_name
+        )
+        encoder_kwargs["return_dict"] = True
+        encoder_kwargs[model_input_name] = inputs_tensor
+        # s = time.time()
+        model_kwargs["encoder_outputs"] = self.large.encoder(**encoder_kwargs)
+        model_kwargs["encoder_outputs_small"] = self.small.encoder(**encoder_kwargs)
+
+        return model_kwargs
+    
     def _greedy_search_body(
         self,
         input_ids,
@@ -209,6 +265,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self.init_iters(model_kwargs=model_kwargs, init_with="large")
         scores = None
         self.rollback_signal = None
+
+        logger.info(f"BiLD greedy search body: input_ids: {input_ids}")
 
         while True:
             # Iteration right after the rollback
@@ -288,12 +346,16 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
                     # if there exists any predictions that deviates above threshold vs. the large model's prediction
                     if loss_above_thres.any():
+                        logger.warning("Rolling back to large model")
                         # get the earliest index among those above-threshold prediction
                         first_idx_loss_above_thres = loss_above_thres.to(
                             torch.int
                         ).argmax()
                         past = model_inputs["past_key_values"]
-                        past_len = past[0][0].shape[2]
+                        if past is not None:
+                            past_len = past[0][0].shape[2]
+                        else:
+                            past_len = 0
                         new_len = first_idx_loss_above_thres + past_len + 1
                         new_input_ids = input_ids[:, :new_len]
 
@@ -337,29 +399,116 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             self.schedule_iters()
 
         return input_ids
-
-    def _prepare_encoder_decoder_kwargs_for_generation(
+    
+    def _greedy_search(
         self,
-        inputs_tensor: torch.Tensor,
-        model_kwargs,
-        model_input_name: Optional[str] = None,
-    ):
-        # 2. prepare encoder args and encoder kwargs from model kwargs
-        irrelevant_prefix = ["decoder_", "cross_attn", "use_cache"]
-        encoder_kwargs = {
+        input_ids: torch.LongTensor,
+        logits_processor: Optional[LogitsProcessorList] = None,
+        stopping_criteria: Optional[StoppingCriteriaList] = None,
+        pad_token_id: Optional[int] = None,
+        eos_token_id: Optional[int] = None,
+        output_attentions: Optional[bool] = None,
+        output_hidden_states: Optional[bool] = None,
+        output_scores: Optional[bool] = None,
+        return_dict_in_generate: Optional[bool] = None,
+        synced_gpus: Optional[bool] = False,
+        **model_kwargs,
+    ) -> Union[GenerateNonBeamOutput, torch.LongTensor]:
+        """
+        Generates sequences of token ids for models with a language modeling head using **greedy decoding**.
+        """
+        logger.info("BiLD greedy search")
+        # init values
+        logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
+        stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
+
+        pad_token_id = pad_token_id if pad_token_id is not None else self.config.pad_token_id
+        eos_token_id = eos_token_id if eos_token_id is not None else self.config.eos_token_id
+        output_scores = output_scores if output_scores is not None else self.config.output_scores
+        output_attentions = output_attentions if output_attentions is not None else self.config.output_attentions
+        output_hidden_states = (
+            output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
+        )
+        return_dict_in_generate = (
+            return_dict_in_generate if return_dict_in_generate is not None else self.config.return_dict_in_generate
+        )
+
+        assert not return_dict_in_generate, "return dict in generate not supported now"
+
+        # keep track of which sequences are already finished
+        unfinished_sequences = input_ids.new(input_ids.shape[0]).fill_(1)
+
+        input_ids = self._greedy_search_body(
+            input_ids=input_ids,
+            model_kwargs=model_kwargs,
+            output_attentions=output_attentions,
+            output_hidden_states=output_hidden_states,
+            stopping_criteria=stopping_criteria,
+            logits_processor=logits_processor,
+            pad_token_id=pad_token_id,
+            eos_token_id=eos_token_id,
+            synced_gpus=synced_gpus,
+            unfinished_sequences=unfinished_sequences,
+        )
+
+        return input_ids
+    
+    @torch.no_grad()
+    def generate(
+        self,
+        inputs: Optional[torch.Tensor] = None,
+        **kwargs,
+    ) -> Union[GenerateOutput, torch.LongTensor]:
+        r"""
+        Generates sequences of token ids for models with a language modeling head.
+        """
+        logger.info(f"BiLD generate: inputs: {inputs}, kwargs: {kwargs}")
+        
+        relevant_model_kwargs = ["input_ids", "attention_mask"]
+        model_kwargs = {
             argument: value
-            for argument, value in model_kwargs.items()
-            if not any(argument.startswith(p) for p in irrelevant_prefix)
+            for argument, value in kwargs.items() if argument in relevant_model_kwargs
         }
 
-        # 3. make sure that encoder returns `ModelOutput`
-        model_input_name = (
-            model_input_name if model_input_name is not None else self.main_input_name
-        )
-        encoder_kwargs["return_dict"] = True
-        encoder_kwargs[model_input_name] = inputs_tensor
-        # s = time.time()
-        model_kwargs["encoder_outputs"] = self.large.encoder(**encoder_kwargs)
-        model_kwargs["encoder_outputs_small"] = self.small.encoder(**encoder_kwargs)
+        logger.info(f"BiLD generate: model_kwargs: {model_kwargs}")
 
-        return model_kwargs
+        # Define model inputs
+        inputs_tensor, model_input_name, model_kwargs = self._prepare_model_inputs(
+            inputs, self.generation_config.bos_token_id, model_kwargs
+        )
+        batch_size = inputs_tensor.shape[0]
+
+        logger.info(f"BiLD generate: inputs_tensor: {inputs_tensor}, model_input_name: {model_input_name}")
+
+        if self.generation_config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
+            # if model is encoder decoder encoder_outputs are created
+            # and added to `model_kwargs`
+            logger.info("BiLD generate: prepare encoder decoder kwargs")
+            model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation(
+                inputs_tensor, model_kwargs, model_input_name
+            )
+        
+        logger.info(f"BiLD generate after encoder decoder kwargs: model_kwargs: {model_kwargs}")
+
+        # Prepare `input_ids` which will be used for auto-regressive generation
+        input_ids, model_kwargs = self._prepare_decoder_input_ids_for_generation(
+            batch_size=batch_size,
+            model_input_name=model_input_name,
+            model_kwargs=model_kwargs,
+            decoder_start_token_id=self.generation_config.decoder_start_token_id,
+            bos_token_id=self.generation_config.bos_token_id,
+            device=inputs_tensor.device,
+        )
+
+        logger.info(f"BiLD generate: input_ids: {input_ids}, generation_config: {self.generation_config}, model_kwargs: {model_kwargs}")
+        
+        result = self._greedy_search(
+            input_ids,
+            pad_token_id=self.generation_config.pad_token_id,
+            eos_token_id=self.generation_config.eos_token_id,
+            output_scores=self.generation_config.output_scores,
+            output_logits=self.generation_config.output_logits,
+            **model_kwargs,
+        )
+
+        return result

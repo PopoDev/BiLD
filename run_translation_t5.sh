@@ -9,3 +9,4 @@ CUDA_VISIBLE_DEVICES=0 python src/run_translation.py \
 --evaluation_strategy epoch --save_strategy epoch \
 --do_eval \
 --per_device_eval_batch_size 1 \
+--predict_with_generate
