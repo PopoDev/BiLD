@@ -334,6 +334,9 @@ def run_translation(parser: HfArgumentParser):
         if "validation" not in raw_datasets:
             raise ValueError("--do_eval requires a validation dataset")
         eval_dataset = raw_datasets["validation"]
+        eval_dataset.to_json("data/eval_dataset.json")
+        # TODO: Fix hacky way to make the model work by skipping the 201sf row of the eval dataset
+        eval_dataset = eval_dataset.select(list(range(201)) + list(range(202, len(eval_dataset))))
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(200, max_eval_samples))

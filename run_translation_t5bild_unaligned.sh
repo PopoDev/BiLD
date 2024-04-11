@@ -9,6 +9,9 @@ python src/run_translation.py \
 --num_beam 1 \
 --evaluation_strategy epoch --save_strategy epoch \
 --do_eval \
+<<<<<<< HEAD
 --max_eval_samples 202 \
+=======
+>>>>>>> e74e68873a1f157ead94f684b237f08dcad72bc7
 --per_device_eval_batch_size 1 \
 --predict_with_generate

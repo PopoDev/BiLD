@@ -13,7 +13,7 @@ from typing import Optional, Tuple, Union, Callable, List
 import numpy as np
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 class T5BiLDModel(nn.Module, GenerationMixin):
     def __init__(
@@ -61,7 +61,6 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             output_logits=True,
             _from_model_config=False,
         )
-        logger.info("BiLD model initialized")
 
     def can_generate(self):
         return True
@@ -103,8 +102,6 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         else:  # small
             self.model_kwargs = self.small_kwargs
         
-        logger.info(f"BiLD init: {self.model_type}")
-
     def schedule_iters(self, fall_back_to_large=False, fall_back_to_small=False):
         """
         schedule large and small models.
@@ -126,9 +123,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             self.model_type = "large"
             self.iter_count = self.num_large_iters
             self.model_kwargs = self.large_kwargs
-
-        logger.info(f"BiLD schedule: {self.model_type}")
-
+        
     def forward(
         self,
         input_ids: Optional[torch.LongTensor] = None,
@@ -217,6 +212,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         """
         for kwargs in [self.large_kwargs, self.small_kwargs]:
             new_kwargs = []
+            # TODO: Fix past always being None
             if kwargs.get("past"):
                 for layer_past in kwargs["past"]:
                     new_layer_kwargs = []
@@ -234,7 +230,6 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         model_kwargs,
         model_input_name: Optional[str] = None,
     ):
-        logger.info("BiLD prepare encoder decoder kwargs")
         # 2. prepare encoder args and encoder kwargs from model kwargs
         irrelevant_prefix = ["decoder_", "cross_attn", "use_cache"]
         encoder_kwargs = {
@@ -273,8 +268,6 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self.init_iters(model_kwargs=model_kwargs, init_with="large")
         scores = None
         self.rollback_signal = None
-
-        logger.info(f"BiLD greedy search body: input_ids: {input_ids}")
 
         while True:
             # Iteration right after the rollback
@@ -320,6 +313,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             if fallback_cond:
                 # if fall back, we ignore the current run
                 # the large model will produce the same token (i.e. redundant)
+                logger.info(f"Fall back to large model, score: {score.max()}, next_token: {next_tokens}")
                 self.schedule_iters(fall_back_to_large=True)
                 continue
 
@@ -354,12 +348,13 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
                     # if there exists any predictions that deviates above threshold vs. the large model's prediction
                     if loss_above_thres.any():
-                        logger.warning("Rolling back to large model")
+                        logger.info(f"Rolling back to large model, max loss: {loss.max()}")
                         # get the earliest index among those above-threshold prediction
                         first_idx_loss_above_thres = loss_above_thres.to(
                             torch.int
                         ).argmax()
                         past = model_inputs["past_key_values"]
+                        # TODO: Fix past always being None
                         if past is not None:
                             past_len = past[0][0].shape[2]
                         else:
@@ -425,7 +420,6 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         """
         Generates sequences of token ids for models with a language modeling head using **greedy decoding**.
         """
-        logger.info("BiLD greedy search")
         # init values
         logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
         stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
@@ -470,7 +464,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         r"""
         Generates sequences of token ids for models with a language modeling head.
         """
-        logger.info(f"BiLD generate: inputs: {inputs}, kwargs: {kwargs}")
+        logger.debug(f"BiLD generate: inputs: {inputs}, kwargs: {kwargs}")
         
         relevant_model_kwargs = ["input_ids", "attention_mask"]
         model_kwargs = {
@@ -478,26 +472,19 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             for argument, value in kwargs.items() if argument in relevant_model_kwargs
         }
 
-        logger.info(f"BiLD generate: model_kwargs: {model_kwargs}")
-
         # Define model inputs
         inputs_tensor, model_input_name, model_kwargs = self._prepare_model_inputs(
             inputs, self.generation_config.bos_token_id, model_kwargs
         )
         batch_size = inputs_tensor.shape[0]
 
-        logger.info(f"BiLD generate: inputs_tensor: {inputs_tensor}, model_input_name: {model_input_name}")
-
         if self.generation_config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
             # if model is encoder decoder encoder_outputs are created
             # and added to `model_kwargs`
-            logger.info("BiLD generate: prepare encoder decoder kwargs")
             model_kwargs = self._prepare_encoder_decoder_kwargs_for_generation(
                 inputs_tensor, model_kwargs, model_input_name
             )
         
-        logger.info(f"BiLD generate after encoder decoder kwargs: model_kwargs: {model_kwargs}")
-
         # Prepare `input_ids` which will be used for auto-regressive generation
         input_ids, model_kwargs = self._prepare_decoder_input_ids_for_generation(
             batch_size=batch_size,
@@ -508,7 +495,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             device=inputs_tensor.device,
         )
 
-        logger.info(f"BiLD generate: input_ids: {input_ids}, generation_config: {self.generation_config}, model_kwargs: {model_kwargs}")
+        logger.debug(f"BiLD generate: input_ids: {input_ids}, generation_config: {self.generation_config}, model_kwargs: {model_kwargs}")
         
         result = self._greedy_search(
             input_ids,
