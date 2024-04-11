@@ -6,3 +6,6 @@ accelerate
 sentencepiece
 protobuf
 sacrebleu
+rouge_score
+nltk
+pandas

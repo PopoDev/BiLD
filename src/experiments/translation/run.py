@@ -410,11 +410,14 @@ def run_translation(parser: HfArgumentParser):
         result = metric.compute(predictions=decoded_preds, references=decoded_labels)
         result = {"bleu": result["score"]}
 
+        print(result)
+
         prediction_lens = [
             np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds
         ]
         result["gen_len"] = np.mean(prediction_lens)
         result = {k: round(v, 4) for k, v in result.items()}
+        print(result)
         return result
 
     # Initialize our Trainer
@@ -470,6 +473,7 @@ def run_translation(parser: HfArgumentParser):
         metrics = trainer.evaluate(
             max_length=max_length, num_beams=num_beams, metric_key_prefix="eval"
         )
+        print(metrics)
         max_eval_samples = (
             data_args.max_eval_samples
             if data_args.max_eval_samples is not None

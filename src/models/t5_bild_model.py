@@ -34,6 +34,9 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
         self.crossentropy_loss = nn.CrossEntropyLoss(reduce=False)
 
+    def can_generate(self):
+        return True
+
     def is_large(self):
         return self.model_type == "large"
 
