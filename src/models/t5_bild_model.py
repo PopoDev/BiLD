@@ -6,8 +6,11 @@ from torch import nn
 import torch.distributed as dist
 from transformers import GenerationMixin, LogitsProcessorList, StoppingCriteriaList
 from transformers.generation.utils import GenerateOutput, GenerateNonBeamOutput, GenerationConfig
+from transformers.generation.stopping_criteria import MaxLengthCriteria
 from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
+from transformers import AutoTokenizer
 from typing import Optional, Tuple, Union, Callable, List
+import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
@@ -37,8 +40,13 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
         self.fallback_threshold = fallback_threshold or 0.6
         self.rollback_threshold = rollback_threshold or 5.0
+        self.tokenizer = AutoTokenizer.from_pretrained("google-t5/t5-small")
 
         self.crossentropy_loss = nn.CrossEntropyLoss(reduce=False)
+
+        # Prepare stopping criteria
+        self.stopping_criteria = MaxLengthCriteria(max_length=50)
+
         self.generation_config = GenerationConfig(
             num_beams=1,
             temperature=1.0,
@@ -393,7 +401,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                 )
 
             # stop when each sentence is finished, or if we exceed the maximum length
-            if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores):
+            if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores)[0]:
                 break
 
             self.schedule_iters()
@@ -508,6 +516,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             eos_token_id=self.generation_config.eos_token_id,
             output_scores=self.generation_config.output_scores,
             output_logits=self.generation_config.output_logits,
+            stopping_criteria=self.stopping_criteria,
             **model_kwargs,
         )
 
