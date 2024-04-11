@@ -9,6 +9,5 @@ CUDA_VISIBLE_DEVICES=0 python src/run_translation.py \
 --num_beam 1 \
 --evaluation_strategy epoch --save_strategy epoch \
 --do_eval \
---max_eval_samples 100 \
 --per_device_eval_batch_size 1 \
 --predict_with_generate
