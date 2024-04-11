@@ -1,4 +1,4 @@
-CUDA_VISIBLE_DEVICES=0 python src/run_translation.py \
+python src/run_translation.py \
 --output_dir ./out/t5bild/unaligned \
 --model_name_large kssteven/mT5-large-iwslt2017-de-en --model_name_small kssteven/mT5-small-iwslt2017-de-en \
 --tokenizer_name google/mt5-small \
@@ -9,6 +9,6 @@ CUDA_VISIBLE_DEVICES=0 python src/run_translation.py \
 --num_beam 1 \
 --evaluation_strategy epoch --save_strategy epoch \
 --do_eval \
---max_eval_samples 100 \
+--max_eval_samples 202 \
 --per_device_eval_batch_size 1 \
 --predict_with_generate
