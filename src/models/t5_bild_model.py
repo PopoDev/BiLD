@@ -13,7 +13,7 @@ from typing import Optional, Tuple, Union, Callable, List
 import numpy as np
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 class T5BiLDModel(nn.Module, GenerationMixin):
     def __init__(
@@ -396,7 +396,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                 )
 
             # stop when each sentence is finished, or if we exceed the maximum length
-            if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores)[0]:
+            if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores):
                 break
 
             self.schedule_iters()

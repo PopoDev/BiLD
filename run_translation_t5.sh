@@ -1,4 +1,4 @@
-python src/run_translation.py \
+CUDA_VISIBLE_DEVICES=0 python src/run_translation.py \
 --output_dir ./out/t5 \
 --model_name kssteven/mT5-large-iwslt2017-de-en \
 --tokenizer_name google/mt5-small \
