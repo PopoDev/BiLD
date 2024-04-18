@@ -3,14 +3,11 @@ import logging
 
 import torch
 from torch import nn
-import torch.distributed as dist
 from transformers import GenerationMixin, LogitsProcessorList, StoppingCriteriaList
 from transformers.generation.utils import GenerateOutput, GenerateNonBeamOutput, GenerationConfig
 from transformers.generation.stopping_criteria import MaxLengthCriteria
-from transformers.integrations.deepspeed import is_deepspeed_zero3_enabled
 from transformers import AutoTokenizer
-from typing import Optional, Tuple, Union, Callable, List
-import numpy as np
+from typing import Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
