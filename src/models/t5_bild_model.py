@@ -37,6 +37,11 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
         self.fallback_threshold = fallback_threshold or 0.6
         self.rollback_threshold = rollback_threshold or 5.0
+
+        self.generate_count = 0
+        self.fallback_count = 0
+        self.rollback_count = 0
+
         self.tokenizer = AutoTokenizer.from_pretrained("google-t5/t5-small")
 
         self.crossentropy_loss = nn.CrossEntropyLoss(reduce=False)
@@ -311,6 +316,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                 # if fall back, we ignore the current run
                 # the large model will produce the same token (i.e. redundant)
                 logger.info(f"Fall back to large model, score: {score.max()}, next_token: {next_tokens}")
+                self.fallback_count += 1
                 self.schedule_iters(fall_back_to_large=True)
                 continue
 
@@ -377,6 +383,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                         # You can remove this condition
                         if new_pred[0] != input_ids[0, new_len]:
                             input_ids = torch.cat([new_input_ids, new_pred], dim=-1)
+                            self.rollback_count += 1
                             self.rollback_signal = True
                             continue
 
@@ -396,6 +403,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             if unfinished_sequences.max() == 0 or stopping_criteria(input_ids, scores):
                 break
 
+            self.generate_count += 1
             self.schedule_iters()
 
         return input_ids

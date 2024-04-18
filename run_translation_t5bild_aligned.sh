@@ -1,5 +1,5 @@
 python src/run_translation.py \
---output_dir ./out/t5bild/aligned \
+--output_dir ./out/aligned \
 --model_name_large kssteven/mT5-large-iwslt2017-de-en --model_name_small kssteven/mT5-small-iwslt2017-de-en-bild-aligned \
 --tokenizer_name google/mt5-small \
 --dataset_name iwslt2017 --dataset_config_name iwslt2017-de-en \

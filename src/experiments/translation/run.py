@@ -6,6 +6,7 @@ https://github.com/kssteven418/BigLittleDecoder
 import logging
 import os
 import sys
+import json
 
 import datasets
 import evaluate
@@ -482,8 +483,19 @@ def run_translation(parser: HfArgumentParser):
         )
         metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
 
+        if hasattr(model, 'generate_count'):
+            metrics["fallback_percentage"] = model.fallback_count * 100 / model.generate_count
+            metrics["rollback_percentage"] = model.rollback_count * 100 / model.generate_count
+
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
+
+        results_dir = training_args.output_dir.replace("out", "results")
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+
+        with open(f"{results_dir}/{data_args.dataset_name}_fb={model.fallback_threshold}_rb={model.rollback_threshold}_samples={max_eval_samples}.json", "w") as f:
+            json.dump(metrics, f, indent=4)
 
     if training_args.do_predict:
         logger.info("*** Predict ***")
