@@ -493,8 +493,15 @@ def run_translation(parser: HfArgumentParser):
         results_dir = training_args.output_dir.replace("out", "results")
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)
+        
+        attributes = [data_args.dataset_name, str(max_eval_samples)]
+        if hasattr(model, 'fallback_threshold') and hasattr(model, 'rollback_threshold'):
+            attributes.append(f"fb={model.fallback_threshold}")
+            attributes.append(f"rb={model.rollback_threshold}")
+        
+        results_file = f"{'_'.join(attributes)}.json"
 
-        with open(f"{results_dir}/{data_args.dataset_name}_fb={model.fallback_threshold}_rb={model.rollback_threshold}_samples={max_eval_samples}.json", "w") as f:
+        with open(f"{results_dir}/{results_file}", "w") as f:
             json.dump(metrics, f, indent=4)
 
     if training_args.do_predict:
