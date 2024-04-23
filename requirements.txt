@@ -9,3 +9,4 @@ sacrebleu
 rouge_score
 nltk
 pandas
+matplotlib
