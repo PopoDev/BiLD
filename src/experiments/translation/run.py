@@ -7,6 +7,7 @@ import logging
 import os
 import sys
 import json
+import torch
 
 import datasets
 import evaluate
@@ -492,7 +493,9 @@ def run_translation(parser: HfArgumentParser):
 
         # Save the metrics if evaluation is made on complete eval dataset
         if max_eval_samples == len(eval_dataset):
-            results_dir = training_args.output_dir.replace("out", "results")
+            gpu_name = torch.cuda.get_device_name(torch.cuda.current_device())
+            gpu_num = torch.cuda.device_count()
+            results_dir = training_args.output_dir.replace("out", f"results/{gpu_name.replace(' ', '_')}-{gpu_num}")
             if not os.path.exists(results_dir):
                 os.makedirs(results_dir)
             
