@@ -8,12 +8,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true", default=False, help="Debug mode.")
     parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt2014", "xsum", "cnndm"], help="Experiment to run.")
+    parser.add_argument("--aligned", action="store_true", default=False, help="Use aligned data.")
     args = parser.parse_args()
 
     command = []
 
     if args.experiment == "iwslt2017":
-        command.append("./run_translation_t5bild_unaligned.sh")
+        command.append(f"./run_iwslt2017_{args.type}.sh")
     elif args.experiment == "wmt2014":
         raise NotImplementedError("wmt2014 is not implemented yet.")
     elif args.experiment == "xsum":
@@ -25,7 +26,8 @@ if __name__ == "__main__":
 
     for fb_threshold in FB_THRESHOLDS:
         for rb_threshold in RB_THRESHOLDS:
-            command = ["./run_translation_t5bild_unaligned.sh", str(fb_threshold), str(rb_threshold)]
+            command.append(str(fb_threshold))
+            command.append(str(rb_threshold)) 
             if args.debug:
                 command.append("10")
             subprocess.run(command)
