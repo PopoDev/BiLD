@@ -1,5 +1,5 @@
 torch
-transformers==4.39.3
+transformers
 datasets
 evaluate
 accelerate
