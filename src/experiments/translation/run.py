@@ -472,6 +472,8 @@ def run_translation(parser: HfArgumentParser):
     )
     if training_args.do_eval:
         logger.info("*** Evaluate ***")
+        if hasattr(model, 'fallback_threshold') and hasattr(model, 'rollback_threshold'):
+            logger.info(f"fb={model_args.fallback_threshold}, rb={model_args.rollback_threshold}")
 
         metrics = trainer.evaluate(
             max_length=max_length, num_beams=num_beams, metric_key_prefix="eval", max_eval_samples=data_args.max_eval_samples
