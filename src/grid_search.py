@@ -15,7 +15,7 @@ if __name__ == "__main__":
     command = []
 
     if args.experiment == "iwslt2017":
-        command.append(f"./run_iwslt2017_{"aligned" if args.aligned else "unaligned"}.sh")
+        command.append(f"./run_iwslt2017_{'aligned' if args.aligned else 'unaligned'}.sh")
     elif args.experiment == "wmt2014":
         raise NotImplementedError("wmt2014 is not implemented yet.")
     elif args.experiment == "xsum":
