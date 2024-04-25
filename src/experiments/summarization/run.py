@@ -30,7 +30,7 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint
 from transformers.utils import is_offline_mode, send_example_telemetry
 
-from src.models.t5_bild_model import T5BiLDModel
+from models.t5_bild_model import T5BiLDModel
 
 logger = logging.getLogger(__name__)
 
