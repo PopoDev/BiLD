@@ -47,7 +47,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         self.crossentropy_loss = nn.CrossEntropyLoss(reduce=False)
 
         # Prepare stopping criteria
-        self.stopping_criteria = MaxLengthCriteria(max_length=100)
+        self.stopping_criteria = MaxLengthCriteria(max_length=150)
 
         self.generation_config = GenerationConfig(
             num_beams=1,

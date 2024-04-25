@@ -1,0 +1,12 @@
+python src/run_translation.py \
+--output_dir ./out/vanilla \
+--model_name kssteven/mT5-large-wmt2014-de-en \
+--tokenizer_name google/mt5-small \
+--dataset_name wmt14 --dataset_config_name de-en \
+--source_lang de --target_lang en \
+--metric_for_best_model bleu \
+--num_beam 1 \
+--evaluation_strategy epoch --save_strategy epoch \
+--do_eval \
+--per_device_eval_batch_size 1 \
+--predict_with_generate
