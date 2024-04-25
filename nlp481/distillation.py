@@ -7,6 +7,7 @@ from tqdm import tqdm
 import pandas as pd
 import os
 import numpy as np
+import sys
 
 def getEmptyFrameDict(
     input_key: str,
@@ -106,38 +107,41 @@ def inferDataFrameDict(
         row_counter = 0
         
         for chunk_idx, curr_chunk in enumerate(tqdm(chunks_iter)):
-            curr_chunk_inputs = list(curr_chunk[input_key])
-            curr_chunk_outputs = list(curr_chunk[output_key])
-            is_cached = all(x != "" for x in curr_chunk_outputs)
+            try:
+                curr_chunk_inputs = list(curr_chunk[input_key])
+                curr_chunk_outputs = list(curr_chunk[output_key])
+                is_cached = all(x != "" for x in curr_chunk_outputs)
 
-            if is_cached:
+                if is_cached:
+                    row_counter += len(curr_chunk_outputs)
+                    continue
+
+                inputs = [prefix + doc for doc in curr_chunk_inputs]
+                input_ids = tokenizer(
+                    inputs, 
+                    return_tensors = "pt",
+                    max_length = max_input_length,
+                    truncation = True,
+                    padding = True,
+                ).input_ids.to(model_device)
+
+                outputs = model.generate(input_ids, max_new_tokens = max_output_length)
+                outputs.to("cpu")
+                decoded_output = tokenizer.batch_decode(outputs, skip_special_tokens = True)
+
+                out_column_index = curr_dataframe.columns.get_loc(output_key)
+                end_row_index = row_counter + len(decoded_output)
+                curr_dataframe.iloc[row_counter : end_row_index, out_column_index] = decoded_output
                 row_counter += len(curr_chunk_outputs)
-                continue
 
-            inputs = [prefix + doc for doc in curr_chunk_inputs]
-            input_ids = tokenizer(
-                inputs, 
-                return_tensors = "pt",
-                max_length = max_input_length,
-                truncation = True,
-                padding = True,
-            ).input_ids.to(model_device)
-
-            outputs = model.generate(input_ids, max_new_tokens = max_output_length)
-            outputs.to("cpu")
-            decoded_output = tokenizer.batch_decode(outputs, skip_special_tokens = True)
-
-            out_column_index = curr_dataframe.columns.get_loc(output_key)
-            end_row_index = row_counter + len(decoded_output)
-            curr_dataframe.iloc[row_counter : end_row_index, out_column_index] = decoded_output
-            row_counter += len(curr_chunk_outputs)
-
-            if (((chunk_idx + 1) % batches_per_cache_write) == 0) and using_cache:
-                cacheFrame(
-                    curr_dataframe,
-                    cache_location,
-                    f"{dataset_name}_{curr_name}"
-                )
+                if (((chunk_idx + 1) % batches_per_cache_write) == 0) and using_cache:
+                    cacheFrame(
+                        curr_dataframe,
+                        cache_location,
+                        f"{dataset_name}_{curr_name}"
+                    )
+            except:
+                sys.exit(1)
             
         cacheFrame(
             curr_dataframe,

@@ -15,4 +15,6 @@ CUDA_VISIBLE_DEVICES=0 python src/run_training.py \
 --max_steps 500000 \
 --predict_with_generate \
 --push_to_hub \
---generation_max_length 100
+--generation_max_length 100 \
+--evaluation_strategy steps \
+--eval_steps 2000
