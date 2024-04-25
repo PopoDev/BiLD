@@ -24,6 +24,9 @@ def run(rank, world_size, args):
     fb_thresholds = FB_THRESHOLDS[rank * len(FB_THRESHOLDS) // world_size : (rank + 1) * len(FB_THRESHOLDS) // world_size]
 
     for fb_threshold in fb_thresholds:
+        if args.aligned:
+            fb_threshold += 0.1
+
         for rb_threshold in RB_THRESHOLDS:
             command = [script_name, str(fb_threshold), str(rb_threshold)]
             if args.debug:
