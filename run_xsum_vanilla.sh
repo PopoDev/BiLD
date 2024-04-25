@@ -8,4 +8,5 @@ python src/run_summarization.py \
 --evaluation_strategy epoch --save_strategy epoch \
 --do_eval \
 --per_device_eval_batch_size 1 \
+--trust_remote_code True \
 --predict_with_generate

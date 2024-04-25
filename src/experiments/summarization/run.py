@@ -168,6 +168,7 @@ def run_summarization(parser: HfArgumentParser):
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name,
         use_fast=model_args.use_fast_tokenizer,
+        trust_remote_code=model_args.trust_remote_code,
     )
 
     if model_args.model_name_large and model_args.model_name_small:
@@ -185,11 +186,13 @@ def run_summarization(parser: HfArgumentParser):
             model_args.model_name_large,
             config=config_large,
             cache_dir=model_args.cache_dir,
+            trust_remote_code=model_args.trust_remote_code,
         )
         model_small = AutoModelForSeq2SeqLM.from_pretrained(
             model_args.model_name_small,
             config=config_small,
             cache_dir=model_args.cache_dir,
+            trust_remote_code=model_args.trust_remote_code,
         )
         model = T5BiLDModel(
             large=model_large,
@@ -202,6 +205,7 @@ def run_summarization(parser: HfArgumentParser):
         model = AutoModelForSeq2SeqLM.from_pretrained(
             model_args.model_name,
             cache_dir=model_args.cache_dir,
+            trust_remote_code=model_args.trust_remote_code,
         )
         logger.info("Using pretrained model")
 
