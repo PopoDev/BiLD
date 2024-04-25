@@ -3,6 +3,8 @@ BiLD for Summarization
 https://github.com/kssteven418/BigLittleDecoder
 """
 
+import torch
+import json
 import logging
 import os
 import sys
@@ -475,6 +477,22 @@ def run_summarization(parser: HfArgumentParser):
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
 
+        gpu_name = torch.cuda.get_device_name(torch.cuda.current_device())
+        gpu_num = torch.cuda.device_count()
+        results_dir = training_args.output_dir.replace("out", f"results/{gpu_name.replace(' ', '_')}-{gpu_num}")
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+        
+        attributes = [data_args.dataset_name]
+        if hasattr(model, 'fallback_threshold') and hasattr(model, 'rollback_threshold'):
+            attributes.append(f"fb={model.fallback_threshold}")
+            attributes.append(f"rb={model.rollback_threshold}")
+        
+        results_file = f"{'_'.join(attributes)}.json"
+
+        with open(f"{results_dir}/{results_file}", "w") as f:
+            json.dump(metrics, f, indent=4)
+
     if training_args.do_predict:
         logger.info("*** Predict ***")
 
@@ -499,22 +517,5 @@ def run_summarization(parser: HfArgumentParser):
                 output_prediction_file = os.path.join(training_args.output_dir, "generated_predictions.txt")
                 with open(output_prediction_file, "w") as writer:
                     writer.write("\n".join(predictions))
-
-    kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "summarization"}
-    if data_args.dataset_name is not None:
-        kwargs["dataset_tags"] = data_args.dataset_name
-        if data_args.dataset_config_name is not None:
-            kwargs["dataset_args"] = data_args.dataset_config_name
-            kwargs["dataset"] = f"{data_args.dataset_name} {data_args.dataset_config_name}"
-        else:
-            kwargs["dataset"] = data_args.dataset_name
-
-    if data_args.lang is not None:
-        kwargs["language"] = data_args.lang
-
-    if training_args.push_to_hub:
-        trainer.push_to_hub(**kwargs)
-    else:
-        trainer.create_model_card(**kwargs)
 
     return results
