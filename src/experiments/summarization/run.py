@@ -1,33 +1,15 @@
-#!/usr/bin/env python
-# coding=utf-8
-# Copyright 2021 The HuggingFace Team. All rights reserved.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """
-Fine-tuning the library models for sequence to sequence.
+BiLD for Summarization 
+https://github.com/kssteven418/BigLittleDecoder
 """
-# You can also adapt this script on your own sequence to sequence task. Pointers for this are left as comments.
 
 import logging
 import os
 import sys
-import warnings
-from dataclasses import dataclass, field
-from typing import Optional
 
 import datasets
 import evaluate
-import nltk  # Here to have a nice missing dependency error message early on
+import nltk
 import numpy as np
 from datasets import load_dataset
 from filelock import FileLock
@@ -39,23 +21,16 @@ from transformers import (
     AutoTokenizer,
     DataCollatorForSeq2Seq,
     HfArgumentParser,
-    MBart50Tokenizer,
     MBart50TokenizerFast,
     MBartTokenizer,
     MBartTokenizerFast,
     Seq2SeqTrainer,
-    Seq2SeqTrainingArguments,
     set_seed,
 )
 from transformers.trainer_utils import get_last_checkpoint
-from transformers.utils import check_min_version, is_offline_mode, send_example_telemetry
-from transformers.utils.versions import require_version
+from transformers.utils import is_offline_mode, send_example_telemetry
 
-
-# Will error if the minimal version of Transformers is not installed. Remove at your own risks.
-check_min_version("4.41.0.dev0")
-
-require_version("datasets>=1.8.0", "To fix: pip install -r examples/pytorch/summarization/requirements.txt")
+from src.models.t5_bild_model import T5BiLDModel
 
 logger = logging.getLogger(__name__)
 
@@ -70,235 +45,7 @@ except (LookupError, OSError):
         nltk.download("punkt", quiet=True)
 
 # A list of all multilingual tokenizer which require lang attribute.
-MULTILINGUAL_TOKENIZERS = [MBartTokenizer, MBartTokenizerFast, MBart50Tokenizer, MBart50TokenizerFast]
-
-
-@dataclass
-class ModelArguments:
-    """
-    Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
-    """
-
-    model_name_or_path: str = field(
-        metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
-    )
-    config_name: Optional[str] = field(
-        default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
-    )
-    tokenizer_name: Optional[str] = field(
-        default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"}
-    )
-    cache_dir: Optional[str] = field(
-        default=None,
-        metadata={"help": "Where to store the pretrained models downloaded from huggingface.co"},
-    )
-    use_fast_tokenizer: bool = field(
-        default=True,
-        metadata={"help": "Whether to use one of the fast tokenizer (backed by the tokenizers library) or not."},
-    )
-    model_revision: str = field(
-        default="main",
-        metadata={"help": "The specific model version to use (can be a branch name, tag name or commit id)."},
-    )
-    token: str = field(
-        default=None,
-        metadata={
-            "help": (
-                "The token to use as HTTP bearer authorization for remote files. If not specified, will use the token "
-                "generated when running `huggingface-cli login` (stored in `~/.huggingface`)."
-            )
-        },
-    )
-    use_auth_token: bool = field(
-        default=None,
-        metadata={
-            "help": "The `use_auth_token` argument is deprecated and will be removed in v4.34. Please use `token` instead."
-        },
-    )
-    trust_remote_code: bool = field(
-        default=False,
-        metadata={
-            "help": (
-                "Whether or not to allow for custom models defined on the Hub in their own modeling files. This option "
-                "should only be set to `True` for repositories you trust and in which you have read the code, as it will "
-                "execute code present on the Hub on your local machine."
-            )
-        },
-    )
-    resize_position_embeddings: Optional[bool] = field(
-        default=None,
-        metadata={
-            "help": (
-                "Whether to automatically resize the position embeddings if `max_source_length` exceeds "
-                "the model's position embeddings."
-            )
-        },
-    )
-
-
-@dataclass
-class DataTrainingArguments:
-    """
-    Arguments pertaining to what data we are going to input our model for training and eval.
-    """
-
-    lang: Optional[str] = field(default=None, metadata={"help": "Language id for summarization."})
-
-    dataset_name: Optional[str] = field(
-        default=None, metadata={"help": "The name of the dataset to use (via the datasets library)."}
-    )
-    dataset_config_name: Optional[str] = field(
-        default=None, metadata={"help": "The configuration name of the dataset to use (via the datasets library)."}
-    )
-    text_column: Optional[str] = field(
-        default=None,
-        metadata={"help": "The name of the column in the datasets containing the full texts (for summarization)."},
-    )
-    summary_column: Optional[str] = field(
-        default=None,
-        metadata={"help": "The name of the column in the datasets containing the summaries (for summarization)."},
-    )
-    train_file: Optional[str] = field(
-        default=None, metadata={"help": "The input training data file (a jsonlines or csv file)."}
-    )
-    validation_file: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": (
-                "An optional input evaluation data file to evaluate the metrics (rouge) on (a jsonlines or csv file)."
-            )
-        },
-    )
-    test_file: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": "An optional input test data file to evaluate the metrics (rouge) on (a jsonlines or csv file)."
-        },
-    )
-    overwrite_cache: bool = field(
-        default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
-    )
-    preprocessing_num_workers: Optional[int] = field(
-        default=None,
-        metadata={"help": "The number of processes to use for the preprocessing."},
-    )
-    max_source_length: Optional[int] = field(
-        default=1024,
-        metadata={
-            "help": (
-                "The maximum total input sequence length after tokenization. Sequences longer "
-                "than this will be truncated, sequences shorter will be padded."
-            )
-        },
-    )
-    max_target_length: Optional[int] = field(
-        default=128,
-        metadata={
-            "help": (
-                "The maximum total sequence length for target text after tokenization. Sequences longer "
-                "than this will be truncated, sequences shorter will be padded."
-            )
-        },
-    )
-    val_max_target_length: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": (
-                "The maximum total sequence length for validation target text after tokenization. Sequences longer "
-                "than this will be truncated, sequences shorter will be padded. Will default to `max_target_length`. "
-                "This argument is also used to override the ``max_length`` param of ``model.generate``, which is used "
-                "during ``evaluate`` and ``predict``."
-            )
-        },
-    )
-    pad_to_max_length: bool = field(
-        default=False,
-        metadata={
-            "help": (
-                "Whether to pad all samples to model maximum sentence length. "
-                "If False, will pad the samples dynamically when batching to the maximum length in the batch. More "
-                "efficient on GPU but very bad for TPU."
-            )
-        },
-    )
-    max_train_samples: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": (
-                "For debugging purposes or quicker training, truncate the number of training examples to this "
-                "value if set."
-            )
-        },
-    )
-    max_eval_samples: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": (
-                "For debugging purposes or quicker training, truncate the number of evaluation examples to this "
-                "value if set."
-            )
-        },
-    )
-    max_predict_samples: Optional[int] = field(
-        default=None,
-        metadata={
-            "help": (
-                "For debugging purposes or quicker training, truncate the number of prediction examples to this "
-                "value if set."
-            )
-        },
-    )
-    num_beams: Optional[int] = field(
-        default=1,
-        metadata={
-            "help": (
-                "Number of beams to use for evaluation. This argument will be passed to ``model.generate``, "
-                "which is used during ``evaluate`` and ``predict``."
-            )
-        },
-    )
-    ignore_pad_token_for_loss: bool = field(
-        default=True,
-        metadata={
-            "help": "Whether to ignore the tokens corresponding to padded labels in the loss computation or not."
-        },
-    )
-    source_prefix: Optional[str] = field(
-        default=None, metadata={"help": "A prefix to add before every source text (useful for T5 models)."}
-    )
-
-    forced_bos_token: Optional[str] = field(
-        default=None,
-        metadata={
-            "help": (
-                "The token to force as the first generated token after the decoder_start_token_id. "
-                "Useful for multilingual models like mBART where the first generated token"
-                "needs to be the target language token (Usually it is the target language token)"
-            )
-        },
-    )
-
-    def __post_init__(self):
-        if (
-            self.dataset_name is None
-            and self.train_file is None
-            and self.validation_file is None
-            and self.test_file is None
-        ):
-            raise ValueError("Need either a dataset name or a training, validation, or test file.")
-        else:
-            if self.train_file is not None:
-                extension = self.train_file.split(".")[-1]
-                assert extension in ["csv", "json"], "`train_file` should be a csv or a json file."
-            if self.validation_file is not None:
-                extension = self.validation_file.split(".")[-1]
-                assert extension in ["csv", "json"], "`validation_file` should be a csv or a json file."
-            if self.test_file is not None:
-                extension = self.test_file.split(".")[-1]
-                assert extension in ["csv", "json"], "`test_file` should be a csv or a json file."
-        if self.val_max_target_length is None:
-            self.val_max_target_length = self.max_target_length
-
+MULTILINGUAL_TOKENIZERS = [MBartTokenizer, MBartTokenizerFast, MBart50TokenizerFast]
 
 summarization_name_mapping = {
     "amazon_reviews_multi": ("review_body", "review_title"),
@@ -316,27 +63,8 @@ summarization_name_mapping = {
 }
 
 
-def main():
-    # See all possible arguments in src/transformers/training_args.py
-    # or by passing the --help flag to this script.
-    # We now keep distinct sets of args, for a cleaner separation of concerns.
-
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, Seq2SeqTrainingArguments))
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        # If we pass only one argument to the script and it's the path to a json file,
-        # let's parse it to get our arguments.
-        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
-    else:
-        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-
-    if model_args.use_auth_token is not None:
-        warnings.warn(
-            "The `use_auth_token` argument is deprecated and will be removed in v4.34. Please use `token` instead.",
-            FutureWarning,
-        )
-        if model_args.token is not None:
-            raise ValueError("`token` and `use_auth_token` are both specified. Please set only the argument `token`.")
-        model_args.token = model_args.use_auth_token
+def run_summarization(parser: HfArgumentParser):
+    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.
@@ -439,36 +167,47 @@ def main():
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
     # download model & vocab.
-    config = AutoConfig.from_pretrained(
-        model_args.config_name if model_args.config_name else model_args.model_name_or_path,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        token=model_args.token,
-        trust_remote_code=model_args.trust_remote_code,
-    )
     tokenizer = AutoTokenizer.from_pretrained(
-        model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,
-        cache_dir=model_args.cache_dir,
+        model_args.tokenizer_name,
         use_fast=model_args.use_fast_tokenizer,
-        revision=model_args.model_revision,
-        token=model_args.token,
-        trust_remote_code=model_args.trust_remote_code,
-    )
-    model = AutoModelForSeq2SeqLM.from_pretrained(
-        model_args.model_name_or_path,
-        from_tf=bool(".ckpt" in model_args.model_name_or_path),
-        config=config,
-        cache_dir=model_args.cache_dir,
-        revision=model_args.model_revision,
-        token=model_args.token,
-        trust_remote_code=model_args.trust_remote_code,
     )
 
-    # We resize the embeddings only when necessary to avoid index errors. If you are creating a model from scratch
-    # on a small vocab and want a smaller embedding size, remove this test.
-    embedding_size = model.get_input_embeddings().weight.shape[0]
-    if len(tokenizer) > embedding_size:
-        model.resize_token_embeddings(len(tokenizer))
+    if model_args.model_name_large and model_args.model_name_small:
+        config_large = AutoConfig.from_pretrained(
+            model_args.config_name_large
+            if model_args.config_name_large
+            else model_args.model_name_large,
+        )
+        config_small = AutoConfig.from_pretrained(
+            model_args.config_name_small
+            if model_args.config_name_small
+            else model_args.model_name_small,
+        )
+        model_large = AutoModelForSeq2SeqLM.from_pretrained(
+            model_args.model_name_large,
+            config=config_large,
+            cache_dir=model_args.cache_dir,
+        )
+        model_small = AutoModelForSeq2SeqLM.from_pretrained(
+            model_args.model_name_small,
+            config=config_small,
+            cache_dir=model_args.cache_dir,
+        )
+        model = T5BiLDModel(
+            large=model_large,
+            small=model_small,
+            fallback_threshold=model_args.fallback_threshold,
+            rollback_threshold=model_args.rollback_threshold,
+        )
+        logger.info("Using BiLD model")
+    else:
+        model = AutoModelForSeq2SeqLM.from_pretrained(
+            model_args.model_name,
+            cache_dir=model_args.cache_dir,
+        )
+        logger.info("Using pretrained model")
+
+    model.resize_token_embeddings(len(tokenizer))
 
     if model.config.decoder_start_token_id is None and isinstance(tokenizer, (MBartTokenizer, MBartTokenizerFast)):
         if isinstance(tokenizer, MBartTokenizer):
@@ -777,12 +516,3 @@ def main():
         trainer.create_model_card(**kwargs)
 
     return results
-
-
-def _mp_fn(index):
-    # For xla_spawn (TPUs)
-    main()
-
-
-if __name__ == "__main__":
-    main()
