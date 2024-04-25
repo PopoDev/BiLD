@@ -37,7 +37,8 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", default=False, help="Debug mode.")
     parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt2014", "xsum", "cnndm"], help="Experiment to run.")
     parser.add_argument("--aligned", action="store_true", default=False, help="Use aligned data.")
+    parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs.")
     args = parser.parse_args()
 
-    world_size = 2  # Number of GPUs
+    world_size = args.gpus
     mp.spawn(run, args=(world_size, args), nprocs=world_size, join=True)
