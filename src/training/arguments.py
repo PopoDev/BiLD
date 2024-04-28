@@ -193,6 +193,12 @@ class DataTrainingArguments:
             "help": "The metric to use for evaluation on the dataset."
         }
     )
+    commit_message: str = field(
+        default="Training Complete",
+        metadata={
+            "help": "The commit message to use when pushing to HuggingFace."
+        }
+    )
 
     def __post_init__(self):
         if (
