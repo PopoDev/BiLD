@@ -1,0 +1,11 @@
+{
+    "eval_loss": 1.9800732135772705,
+    "eval_bleu": 30.3271,
+    "eval_gen_len": 29.142,
+    "eval_runtime": 2271.1802,
+    "eval_samples_per_second": 1.321,
+    "eval_steps_per_second": 1.321,
+    "eval_samples": 3000,
+    "fallback_percentage": 0.920095868708616,
+    "rollback_percentage": 2.705447455010765
+}
