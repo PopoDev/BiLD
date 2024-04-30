@@ -129,8 +129,6 @@ def inferDataFrameDict(
                 outputs.to("cpu")
                 decoded_output = tokenizer.batch_decode(outputs, skip_special_tokens = True)
 
-                print(decoded_output)
-
                 out_column_index = curr_dataframe.columns.get_loc(output_key)
                 end_row_index = row_counter + len(decoded_output)
                 curr_dataframe.iloc[row_counter : end_row_index, out_column_index] = decoded_output
