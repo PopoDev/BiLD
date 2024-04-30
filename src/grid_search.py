@@ -20,15 +20,20 @@ def run(rank, world_size, args):
         raise NotImplementedError("cnndm is not implemented yet.")
     else:
         raise ValueError(f"Unknown experiment: {args.experiment}")
+    
+    fb_thresholds = args.fb_thresholds
+    rb_thresholds = args.rb_thresholds
 
-    fb_thresholds = FB_THRESHOLDS[rank * len(FB_THRESHOLDS) // world_size : (rank + 1) * len(FB_THRESHOLDS) // world_size]
+    # Parallelize grid search on FB thresholds
+    fb_thresholds = fb_thresholds[rank * len(fb_thresholds) // world_size : (rank + 1) * len(fb_thresholds) // world_size]
 
     for fb_threshold in fb_thresholds:
-        for rb_threshold in RB_THRESHOLDS:
+        for rb_threshold in rb_thresholds:
             command = [script_name, str(fb_threshold), str(rb_threshold)]
             if args.debug:
                 command.append("10")
             subprocess.run(command)
+            torch.cuda.empty_cache()
 
     cleanup()
 
@@ -38,6 +43,8 @@ if __name__ == "__main__":
     parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt2014", "xsum", "cnndm"], help="Experiment to run.")
     parser.add_argument("--aligned", action="store_true", default=False, help="Use aligned data.")
     parser.add_argument("--gpus", type=int, default=1, help="Number of GPUs.")
+    parser.add_argument("--fb_thresholds", nargs="+", type=float, default=FB_THRESHOLDS, help="List of FB thresholds.")
+    parser.add_argument("--rb_thresholds", nargs="+", type=int, default=RB_THRESHOLDS, help="List of RB thresholds.")
     args = parser.parse_args()
 
     world_size = args.gpus
