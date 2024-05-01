@@ -5,6 +5,8 @@ import fire
 
 from io import IOBase, StringIO
 from typing import Dict, List
+from multiprocessing import Pool
+from functools import partial
 
 def parseUtilDetails(xml_io: IOBase, verbose: bool = False):
     tree = ET.parse(xml_io)
@@ -58,20 +60,27 @@ def getUtilDetails(
 def dumpAllUsageDetails(
     ssh_username: str,
     ssh_password: str,
-    remote_hosts: List[str] = ["nlpg00", "nlpg01", "nlpg02"],
-    verbose: bool = False
+    remote_hosts: List[str] = ["nlpg00", "nlpg01", "nlpg02", "nlpg03"],
+    verbose: bool = False,
+    num_sub_processes: int = 4
 ) -> None:
+    NUM_PROCESSES = 4
     output_dict = dict()
 
-    for remote_host in remote_hosts:
-        curr_usage = getUtilDetails(
-            remote_host,
-            ssh_username,
-            ssh_password,
-            verbose = verbose
+    with Pool(num_sub_processes) as p:
+        output_list = p.map(
+            partial(
+                getUtilDetails,
+                ssh_username = ssh_username,
+                ssh_password = ssh_password,
+                verbose = verbose
+            ),
+            remote_hosts
         )
-        
-        output_dict[remote_host] = curr_usage
+
+    output_dict = dict()
+    for curr_host, curr_output in zip(remote_hosts, output_list):
+        output_dict[curr_host] = curr_output
 
     print(json.dumps(output_dict, indent = 4))
 
