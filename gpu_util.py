@@ -64,7 +64,6 @@ def dumpAllUsageDetails(
     verbose: bool = False,
     num_sub_processes: int = 4
 ) -> None:
-    NUM_PROCESSES = 4
     output_dict = dict()
 
     with Pool(num_sub_processes) as p:
