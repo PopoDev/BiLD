@@ -51,7 +51,7 @@ def getUtilDetails(
         )
 
         stdin, stdout, stderr = ssh_client.exec_command("nvidia-smi -q -x")
-        usage_output = output = stdout.read().decode('utf-8')
+        usage_output = stdout.read().decode('utf-8')
 
         return parseUtilDetails(StringIO(usage_output), verbose = verbose)
     finally:
