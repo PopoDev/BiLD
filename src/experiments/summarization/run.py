@@ -474,6 +474,10 @@ def run_summarization(parser: HfArgumentParser):
         max_eval_samples = data_args.max_eval_samples if data_args.max_eval_samples is not None else len(eval_dataset)
         metrics["eval_samples"] = min(max_eval_samples, len(eval_dataset))
 
+        if hasattr(model, 'generate_count'):
+            metrics["fallback_percentage"] = model.fallback_count * 100 / model.generate_count
+            metrics["rollback_percentage"] = model.rollback_count * 100 / model.generate_count
+
         trainer.log_metrics("eval", metrics)
         trainer.save_metrics("eval", metrics)
 
