@@ -4,7 +4,7 @@ export CUDA_VISIBLE_DEVICES=1
 export TOKENIZERS_PARALLELISM=false
 
 python src/run_translation.py \
-    --output_dir /local1/hfs/gs_stuff/ft-wmt14/5-e-5 \
+    --output_dir /local1/hfs/gs_stuff/ft-wmt14 \
     --cache_dir /local1/hfs/gs_stuff/cache \
     --model_name google-t5/t5-small \
     --tokenizer_name google-t5/t5-small \
@@ -12,12 +12,12 @@ python src/run_translation.py \
     --dataset_config_name de-en \
     --source_lang de \
     --target_lang en \
-    --learning_rate 0.00005 \
+    --learning_rate 0.0005 \
     --gradient_accumulation_steps 2 \
     --per_device_train_batch_size 8 \
     --per_device_eval_batch_size 8 \
     --save_total_limit 10 \
-    --max_steps 5000 \
+    --max_steps 100000 \
     --predict_with_generate \
     --push_to_hub \
     --generation_max_length 200 \
@@ -26,11 +26,11 @@ python src/run_translation.py \
     --logging_steps 5000 \
     --disable_tqdm False \
     --save_strategy steps \
-    --save_steps 5000 \
+    --save_steps 10000 \
     --do_train \
     --source_prefix 'translate German to English: ' \
     --overwrite_output_dir \
     --evaluation_strategy steps \
-    --eval_steps 5000 \
+    --eval_steps 10000 \
     --metric_for_best_model bleu \
     --load_best_model_at_end \
