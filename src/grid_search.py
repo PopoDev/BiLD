@@ -41,5 +41,8 @@ if __name__ == "__main__":
     parser.add_argument("--rb_thresholds", nargs="+", type=int, default=RB_THRESHOLDS, help="List of RB thresholds.")
     args = parser.parse_args()
 
-    world_size = args.gpus
-    mp.spawn(run, args=(world_size, args), nprocs=world_size, join=True)
+    if args.gpus > 1:
+        world_size = args.gpus
+        mp.spawn(run, args=(world_size, args), nprocs=world_size, join=True)
+    else:
+        run(0, 1, args)
