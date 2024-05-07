@@ -15,9 +15,9 @@ def run(rank, world_size, args):
     elif args.experiment == "wmt2014":
         script_name = f"./run_wmt2014_{'aligned' if args.aligned else 'unaligned'}.sh"
     elif args.experiment == "xsum":
-        raise NotImplementedError("xsum is not implemented yet.")
+        script_name = f"./run_xsum_{'aligned' if args.aligned else 'unaligned'}.sh"
     elif args.experiment == "cnndm":
-        raise NotImplementedError("cnndm is not implemented yet.")
+        script_name = f"./run_cnndm_{'aligned' if args.aligned else 'unaligned'}.sh"
     else:
         raise ValueError(f"Unknown experiment: {args.experiment}")
     
