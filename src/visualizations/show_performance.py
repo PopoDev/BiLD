@@ -112,10 +112,10 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=False):
         label="Unaligned", marker='o'
     )
 
-    # (RB, FB) thresholds annotation
+    # (FB, RB) thresholds annotation
     if best:
         for data in aligned_data + unaligned_data:
-            plt.annotate(f"({int(data['rb_threshold'])}, {data['fb_threshold']})", (measure_func(vanilla_data["eval_runtime"], data["eval_runtime"]), data[metric_key]))
+            plt.annotate(f"({data['fb_threshold']}, {int(data['rb_threshold'])})", (measure_func(vanilla_data["eval_runtime"], data["eval_runtime"]), data[metric_key]))
 
     plt.legend()
     plt.show()
