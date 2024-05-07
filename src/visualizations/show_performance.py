@@ -62,7 +62,7 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True):
     measure_func, measure_label = get_measure(speedup)
 
     plt.figure(figsize=(8, 6))
-    plt.title(f"{TITLES[experiment]} {measure_label}, {hardware}")
+    plt.title(f"{TITLES[experiment]} {measure_label}")
     plt.xlabel(f"{measure_label}")
     plt.ylabel(metric_label)
 
