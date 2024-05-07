@@ -43,7 +43,15 @@ CUDA_VISIBLE_DEVICES=0 ./run_wmt2014_aligned.sh
 
 ### Summarization
 
-We will provide the scripts to evaluate the pretrained models on the summarization datasets soon.
+To evaluate the pretrained models on the summarization datasets, run the following command:
+
+```bash
+# XSUM vanilla model
+CUDA_VISIBLE_DEVICES=0 ./run_xsum_vanilla.sh
+
+# CNNDM with aligned model
+CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
+```
 
 ## Results
 
@@ -60,21 +68,39 @@ We will provide the scripts to evaluate the pretrained models on the summarizati
 
 ### IWSLT2017
 
-| IWSLT2017           | Original           | Reproduction        |
-|---------------------|--------------------|---------------------|
-| BiLD (unaligned)    | 40.33 & 1.43x      | 40.33 & 1.46x       |
-| BiLD (aligned)      | 40.24 & 1.62x      | 40.09 & 1.52x       |
+| IWSLT2017          | Thresholds | Original           | Reproduction       |
+|--------------------|------------|--------------------|--------------------|
+| BiLD (unaligned)   | (2, 0.6)   | 40.33 & 1.43x      | 40.33 & 1.46x      |
+|                    | (3, 0.5)   | 39.44 & 1.58x      | 39.44 & 1.61x      |
+| BiLD (aligned)     | (3, 0.9)   | 40.24 & 1.62x      | 40.09 & 1.52x      |
+|                    | (4, 0.6)   | 39.13 & 1.62x      | 39.15 & 1.73x      |
 
-- For the unaligned model, we were able to reproduce the BLEU score of 40.33 with a speedup of 1.46x using RB, FB= (2, 0.6).
-- For the aligned model, we were able to reproduce the BLEU score of 40.09 with a speedup of 1.52x using RB, FB= (3, 0.9).
+- For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
+- For the speedup, we were able to reproduce the results within 5% of the reported values.
 
 ### WMT2014
 
-We will provide the results for the WMT2014 dataset soon.
+| WMT14              | Thresholds | Original      | Reproduction  |
+|--------------------|------------|---------------|---------------|
+| BiLD (unaligned)   | (2, 0.6)   | 31.28 & 1.34× | 31.65 & 1.06× |
+|                    | (3, 0.5)   | 30.47 & 1.43× | 30.83 & 1.12× |
+| BiLD (aligned)     | (2, 0.8)   | 31.26 & 1.47× | 31.65 & 1.37× |
+|                    | (5, 0.6)   | 30.33 & 1.70× | 30.54 & 1.65× |
+
+- For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
+- For the speedup, we were able to reproduce the results within 10% of the reported values.
 
 ### XSUM
 
-We will provide the results for the XSUM dataset soon.
+| XSUM           | Thresholds | Original | Reproduction |
+|----------------|------------|----------|--------------|
+| BiLD (unaligned) | (3, 0.5)  | 35.12 & 1.48× | 35.12 & 1.40× |
+|                  | (5, 0.3)  | 34.02 & 1.72× | 34.02 & 1.54× |
+| BiLD (aligned)   | (2, 0.6)  | 35.05 & 1.50× | 34.96 & 1.41× |
+|                  | (5, 0.4)  | 33.95 & 1.80× | 33.96 & 1.73× |
+
+- For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
+- For the speedup, we were able to reproduce the results within 10% of the reported values.
 
 ### CNNDM
 
