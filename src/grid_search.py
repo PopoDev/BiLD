@@ -10,14 +10,8 @@ def cleanup():
     torch.distributed.destroy_process_group()
 
 def run(rank, world_size, args):
-    if args.experiment == "iwslt2017":
-        script_name = f"./run_iwslt2017_{'aligned' if args.aligned else 'unaligned'}.sh"
-    elif args.experiment == "wmt2014":
-        script_name = f"./run_wmt2014_{'aligned' if args.aligned else 'unaligned'}.sh"
-    elif args.experiment == "xsum":
-        script_name = f"./run_xsum_{'aligned' if args.aligned else 'unaligned'}.sh"
-    elif args.experiment == "cnndm":
-        script_name = f"./run_cnndm_{'aligned' if args.aligned else 'unaligned'}.sh"
+    if args.experiment in ["iwslt2017", "wmt2014", "xsum", "cnndm"]:
+        script_name = f"./run_{args.experiment}_{'aligned' if args.aligned else 'unaligned'}.sh"
     else:
         raise ValueError(f"Unknown experiment: {args.experiment}")
     
@@ -47,5 +41,8 @@ if __name__ == "__main__":
     parser.add_argument("--rb_thresholds", nargs="+", type=int, default=RB_THRESHOLDS, help="List of RB thresholds.")
     args = parser.parse_args()
 
-    world_size = args.gpus
-    mp.spawn(run, args=(world_size, args), nprocs=world_size, join=True)
+    if args.gpus > 1:
+        world_size = args.gpus
+        mp.spawn(run, args=(world_size, args), nprocs=world_size, join=True)
+    else:
+        run(0, 1, args)
