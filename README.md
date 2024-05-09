@@ -66,7 +66,7 @@ CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
 |            | 39.13 | 1.78×   | (4, 0.6) | 30.33  | 1.70×   | (5, 0.6) | 33.95  | 1.80×   | (5, 0.4) | 40.96  | 2.12×   | (6, 0.2) |
 
 
-### IWSLT2017
+### Reproduction 
 
 | IWSLT2017          | Thresholds | Original           | Reproduction       |
 |--------------------|------------|--------------------|--------------------|
@@ -78,8 +78,6 @@ CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
 - For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
 - For the speedup, we were able to reproduce the results within 5% of the reported values.
 
-### WMT2014
-
 | WMT14              | Thresholds | Original      | Reproduction  |
 |--------------------|------------|---------------|---------------|
 | BiLD (unaligned)   | (2, 0.6)   | 31.28 & 1.34× | 31.65 & 1.06× |
@@ -90,8 +88,6 @@ CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
 - For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
 - For the speedup, we were able to reproduce the results within 10% of the reported values.
 
-### XSUM
-
 | XSUM           | Thresholds | Original | Reproduction |
 |----------------|------------|----------|--------------|
 | BiLD (unaligned) | (3, 0.5)  | 35.12 & 1.48× | 35.12 & 1.40× |
@@ -99,12 +95,18 @@ CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
 | BiLD (aligned)   | (2, 0.6)  | 35.05 & 1.50× | 34.96 & 1.41× |
 |                  | (5, 0.4)  | 33.95 & 1.80× | 33.96 & 1.73× |
 
-- For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
+- For the ROUGE-L scores, we were able to reproduce the results within 1% of the original scores.
 - For the speedup, we were able to reproduce the results within 10% of the reported values.
 
-### CNNDM
+| CNNDM           | Thresholds | Original | Reproduction |
+|-----------------|------------|----------|--------------|
+| BiLD (unaligned) | (3, 0.4)  | 41.44 & 1.71× | 41.44 & 1.54× |
+|                  | (6, 0.2)  | 40.57 & 2.05× | 40.56 & 1.87× |
+| BiLD (aligned)   | (3, 0.3)  | 41.52 & 1.85× | 41.33 & 1.48× |
+|                  | (6, 0.2)  | 40.96 & 2.12× | 40.79 & 1.67× |
 
-We will provide the results for the CNNDM dataset soon.
+- For the ROUGE-L scores, we were able to reproduce the results within 1% of the original scores.
+- For the speedup, we were able to reproduce the results within 20% of the reported values.
 
 ## Pretrained Checkpoints
 
