@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import argparse
 import matplotlib.pyplot as plt
 
 RESULTS_DIR = 'results/'
@@ -122,8 +123,12 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=False):
     plt.savefig(RESULTS_DIR + f"{experiment}_{hardware}_{'speedup' if speedup else 'latency'}_{'best' if best else 'all'}.png")
 
 if __name__ == "__main__":
-    show_performance("wmt14", "tesla-t4", speedup=True)
-    show_performance("wmt14", "tesla-t4", speedup=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt2014", "xsum", "cnndm"], help="Experiment to run.")
+    args = parser.parse_args()
 
-    show_performance("wmt14", "tesla-t4", speedup=True, best=True)
-    show_performance("wmt14", "tesla-t4", speedup=False, best=True)
+    show_performance(args.experiment, "tesla-t4", speedup=True)
+    show_performance(args.experiment, "tesla-t4", speedup=False)
+
+    show_performance(args.experiment, "tesla-t4", speedup=True, best=True)
+    show_performance(args.experiment, "tesla-t4", speedup=False, best=True)
