@@ -47,9 +47,6 @@ def get_data(experiment, results_dir, aligned, best=None):
     if best == "score":
         metric_key, _ = get_metric(experiment)
         compare_best = lambda x, y: x[metric_key] > y[metric_key]
-    elif best == "latency+score":
-        metric_key, _ = get_metric(experiment)
-        compare_best = lambda x, y: x[metric_key] * x["eval_samples_per_second"] > y[metric_key] * y["eval_samples_per_second"]
     else:
         compare_best = lambda x, y: x["eval_runtime"] < y["eval_runtime"]
 
@@ -135,6 +132,3 @@ if __name__ == "__main__":
 
     show_performance(args.experiment, "tesla-t4", speedup=True, best="latency")
     show_performance(args.experiment, "tesla-t4", speedup=False, best="latency")
-
-    show_performance(args.experiment, "tesla-t4", speedup=True, best="latency+score")
-    show_performance(args.experiment, "tesla-t4", speedup=False, best="latency+score")
