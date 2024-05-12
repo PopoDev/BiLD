@@ -121,7 +121,7 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt2014", "xsum", "cnndm"], help="Experiment to run.")
+    parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt14", "xsum", "cnndm"], help="Experiment to run.")
     args = parser.parse_args()
 
     show_performance(args.experiment, "tesla-t4", speedup=True)
