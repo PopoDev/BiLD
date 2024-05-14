@@ -132,11 +132,29 @@ The authors provided the finetuned checkpoints used in the paper.
 ### Aligned Models
 We trained our own aligned models using the outputs of the authors' large finetuned models on each of the four benchmarks. We prove the links to these aligned models below.
 
-| Alignment Dataset | Link |
+| Benchmark for Alignment | Link |
 | ----------------- | ---- |
 | IWSLT-2017-De-En  | To be added |
-| WMT-2014-De-En    | [WMT Aligned SmallmT5](https://huggingface.co/paulh27/wmt_aligned_smallmT5) |
-| XSUM              | [XSUM Aligned SmallmT5](https://huggingface.co/paulh27/xsum_aligned_smallmT5) |
-| CNNDM             | [CNN Aligned SmallT5](https://huggingface.co/paulh27/cnn_aligned_smallT5) |
+| WMT-2014-De-En    | [link](https://huggingface.co/paulh27/wmt_aligned_smallmT5) |
+| XSUM              | [link](https://huggingface.co/paulh27/xsum_aligned_smallmT5) |
+| CNNDM             | [link](https://huggingface.co/paulh27/cnn_aligned_smallT5) |
+
+### Alignment Datasets
+The general idea of alignment is to align the predictions produced by the small and large models. As part of this process, we require a calibration dataset for each benchmark which represents the output sentence distribution of the large model. Then, we fine-tune the small model on this dataset so that it will better follow the output distribution of the large model. To create the calibration dataset for a particular benchmark, we take the inputs of the benchmark dataset and generate the corresponding output sequence using the large model, which creates the (input, output) dataset samples. 
+
+The authors did not open source the calibration datasets. As such, we had to create these ourselves, which we link below.
+
+| Calibration Dataset | Link |
+| ----------------- | ---- |
+| IWSLT-2017-De-En  | [link](https://huggingface.co/datasets/paulh27/alignment_iwslt2017_de_en) |
+| WMT-2014-De-En    | [link](https://huggingface.co/datasets/paulh27/alignment_wmt2014_de_en) |
+| XSUM              | [link](https://huggingface.co/datasets/lilferrit/xsum_t5_distillation) |
+| CNNDM             | [link](https://huggingface.co/datasets/lilferrit/cnn_dailymail_t5_distillation) |
+
+## Further Extensions
+As part of the reproduction, we additionally conducted several experiments not done in the paper to probe the robustness of the Big-Little decoding architecture. 
+
+### Ablation on 
+
 
 
