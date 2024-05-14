@@ -130,4 +130,12 @@ The authors provided the finetuned checkpoints used in the paper.
 | CNNDM    |  T5-large  |  [link](https://huggingface.co/kssteven/T5-large-cnndm) | 
 
 ### Aligned Models
-We are currently training our own aligned models to reproduce the methodology used in the paper. We will provide the links to the checkpoints once they are available.
+We trained our own aligned models using the outputs of the authors' large finetuned models on each of the four benchmarks. We prove the links to these aligned models below.
+
+| Alignment Dataset | Link |
+| -------- | -------- | -------- | 
+| IWSLT-2017-De-En   |  To be added | 
+| WMT-2014-De-En   |  [link](https://huggingface.co/paulh27/wmt_aligned_smallmT5) | 
+| XSUM    |  [link](https://huggingface.co/paulh27/xsum_aligned_smallmT5) | 
+| CNNDM  |  [link](https://huggingface.co/paulh27/cnn_aligned_smallT5) | 
+
