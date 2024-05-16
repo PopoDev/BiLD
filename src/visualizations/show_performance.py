@@ -73,8 +73,10 @@ def get_data(experiment, results_dir, aligned, best=None):
 def get_metric(experiment):
     if experiment in ["iwslt2017", "wmt14"]:
         return "eval_bleu", "BLEU"
-    elif experiment in ["xsum", "cnndm"]:
+    elif experiment in ["xsum", "cnn_dailymail"]:
         return "eval_rougeLsum", "ROUGE-L"
+    else:
+        raise ValueError(f"Unknown experiment: {experiment}")
     
 def get_measure(speedup):
     if speedup:
@@ -116,12 +118,11 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
             plt.annotate(f"({data['fb_threshold']}, {int(data['rb_threshold'])})", (measure_func(vanilla_data["eval_runtime"], data["eval_runtime"]), data[metric_key]))
 
     plt.legend()
-    plt.show()
     plt.savefig(RESULTS_DIR + f"{experiment}_{hardware}_{'speedup' if speedup else 'latency'}_{'best_' + best if best else 'all'}.png")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt14", "xsum", "cnndm"], help="Experiment to run.")
+    parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt14", "xsum", "cnn_dailymail"], help="Experiment to run.")
     args = parser.parse_args()
 
     show_performance(args.experiment, "tesla-t4", speedup=True)
