@@ -1,0 +1,14 @@
+{
+    "eval_gen_len": 27.642985791474885,
+    "eval_loss": 2.0399930477142334,
+    "eval_rouge1": 43.1501,
+    "eval_rouge2": 19.6522,
+    "eval_rougeL": 35.0208,
+    "eval_rougeLsum": 35.0082,
+    "eval_runtime": 4964.0546,
+    "eval_samples": 4997,
+    "eval_samples_per_second": 1.007,
+    "eval_steps_per_second": 1.007,
+    "fallback_percentage": 36.305544921817486,
+    "rollback_percentage": 1.2066020789775906
+}
