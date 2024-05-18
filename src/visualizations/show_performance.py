@@ -87,7 +87,7 @@ def get_measure(speedup):
         measure_label = "Speedup"
     else:
         measure_func = calculate_speedup if SPEED_METRIC == 'eval_samples_per_second' else calculate_latency
-        measure_label = "Latency"
+        measure_label = "Normalized Latency"
     
     return measure_func, measure_label
 
