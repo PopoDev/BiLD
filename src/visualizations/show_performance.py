@@ -4,6 +4,7 @@ import json
 import argparse
 import matplotlib.pyplot as plt
 
+SPEED_METRIC = 'eval_samples_per_second'
 RESULTS_DIR = 'results/'
 TITLES = {
     "iwslt2017": "IWSLT 2017",
@@ -32,8 +33,8 @@ def load_data(experiment, hardware="tesla-t4", best="latency"):
     unaligned_data = get_data(experiment, results_dir, aligned=False, best=best)
     aligned_data = get_data(experiment, results_dir, aligned=True, best=best)
 
-    unaligned_data = sorted(unaligned_data, key=lambda x: x["eval_runtime"])
-    aligned_data = sorted(aligned_data, key=lambda x: x["eval_runtime"])
+    unaligned_data = sorted(unaligned_data, key=lambda x: x[SPEED_METRIC])
+    aligned_data = sorted(aligned_data, key=lambda x: x[SPEED_METRIC])
 
     return vanilla_data, aligned_data, unaligned_data
 
@@ -43,12 +44,12 @@ def get_data(experiment, results_dir, aligned, best=None):
     else:
         results_dir += "unaligned/"
 
-    file_pattern = r'fb=(\d+\.\d+)_rb=(\d+\.\d+)\.json'
+    file_pattern = r'fb=(\d+(\.\d+)?)+_rb=(\d+(\.\d+)?)+\.json'
     if best == "score":
         metric_key, _ = get_metric(experiment)
         compare_best = lambda x, y: x[metric_key] > y[metric_key]
     else:
-        compare_best = lambda x, y: x["eval_runtime"] < y["eval_runtime"]
+        compare_best = lambda x, y: x[SPEED_METRIC] > y[SPEED_METRIC]
 
     data = []
     data_best = {}
@@ -59,7 +60,7 @@ def get_data(experiment, results_dir, aligned, best=None):
 
                 if best:
                     fb_threshold = float(re.search(file_pattern, file).group(1))
-                    rb_threshold = float(re.search(file_pattern, file).group(2))
+                    rb_threshold = float(re.search(file_pattern, file).group(3))
                     if fb_threshold not in data_best or compare_best(result, data_best[fb_threshold]):
                         result["fb_threshold"] = fb_threshold
                         result["rb_threshold"] = rb_threshold
@@ -79,10 +80,16 @@ def get_metric(experiment):
         raise ValueError(f"Unknown experiment: {experiment}")
     
 def get_measure(speedup):
+    calculate_speedup = lambda baseline, compared: baseline / compared
+    calculate_normalized = lambda baseline, compared: compared / baseline
     if speedup:
-        return calculate_speedup, "Speedup"
+        measure_func = calculate_normalized if SPEED_METRIC == 'eval_samples_per_second' else calculate_speedup
+        measure_label = "Speedup"
     else:
-        return calculate_latency, "Normalized Latency"
+        measure_func = calculate_speedup if SPEED_METRIC == 'eval_samples_per_second' else calculate_latency
+        measure_label = "Latency"
+    
+    return measure_func, measure_label
 
 def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
     vanilla_data, aligned_data, unaligned_data = load_data(experiment, hardware, best)
@@ -101,13 +108,13 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
     plt.scatter(1, baseline, color='red', marker='x', label="Vanilla")
 
     plt.plot(
-        [measure_func(vanilla_data["eval_runtime"], data["eval_runtime"]) for data in aligned_data],
+        [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in aligned_data],
         [data[metric_key] for data in aligned_data],
         label="Aligned", marker='s'
     )
 
     plt.plot(
-        [measure_func(vanilla_data["eval_runtime"], data["eval_runtime"]) for data in unaligned_data],
+        [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in unaligned_data],
         [data[metric_key] for data in unaligned_data],
         label="Unaligned", marker='o'
     )
@@ -115,7 +122,7 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
     # (FB, RB) thresholds annotation
     if best:
         for data in aligned_data + unaligned_data:
-            plt.annotate(f"({data['fb_threshold']}, {int(data['rb_threshold'])})", (measure_func(vanilla_data["eval_runtime"], data["eval_runtime"]), data[metric_key]))
+            plt.annotate(f"({data['fb_threshold']}, {int(data['rb_threshold'])})", (measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]), data[metric_key]))
 
     plt.legend()
     plt.savefig(RESULTS_DIR + f"{experiment}_{hardware}_{'speedup' if speedup else 'latency'}_{'best_' + best if best else 'all'}.png")
