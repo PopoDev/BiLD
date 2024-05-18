@@ -66,7 +66,7 @@ CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
 |            | 39.13 | 1.78×   | (4, 0.6) | 30.33  | 1.70×   | (5, 0.6) | 33.95  | 1.80×   | (5, 0.4) | 40.96  | 2.12×   | (6, 0.2) |
 
 
-### IWSLT2017
+### Reproduction 
 
 | IWSLT2017          | Thresholds | Original           | Reproduction       |
 |--------------------|------------|--------------------|--------------------|
@@ -78,8 +78,6 @@ CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
 - For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
 - For the speedup, we were able to reproduce the results within 5% of the reported values.
 
-### WMT2014
-
 | WMT14              | Thresholds | Original      | Reproduction  |
 |--------------------|------------|---------------|---------------|
 | BiLD (unaligned)   | (2, 0.6)   | 31.28 & 1.34× | 31.65 & 1.06× |
@@ -90,8 +88,6 @@ CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
 - For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
 - For the speedup, we were able to reproduce the results within 10% of the reported values.
 
-### XSUM
-
 | XSUM           | Thresholds | Original | Reproduction |
 |----------------|------------|----------|--------------|
 | BiLD (unaligned) | (3, 0.5)  | 35.12 & 1.48× | 35.12 & 1.40× |
@@ -99,12 +95,18 @@ CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
 | BiLD (aligned)   | (2, 0.6)  | 35.05 & 1.50× | 34.96 & 1.41× |
 |                  | (5, 0.4)  | 33.95 & 1.80× | 33.96 & 1.73× |
 
-- For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
+- For the ROUGE-L scores, we were able to reproduce the results within 1% of the original scores.
 - For the speedup, we were able to reproduce the results within 10% of the reported values.
 
-### CNNDM
+| CNNDM           | Thresholds | Original | Reproduction |
+|-----------------|------------|----------|--------------|
+| BiLD (unaligned) | (3, 0.4)  | 41.44 & 1.71× | 41.44 & 1.54× |
+|                  | (6, 0.2)  | 40.57 & 2.05× | 40.56 & 1.87× |
+| BiLD (aligned)   | (3, 0.3)  | 41.52 & 1.85× | 41.33 & 1.48× |
+|                  | (6, 0.2)  | 40.96 & 2.12× | 40.79 & 1.67× |
 
-We will provide the results for the CNNDM dataset soon.
+- For the ROUGE-L scores, we were able to reproduce the results within 1% of the original scores.
+- For the speedup, we were able to reproduce the results within 20% of the reported values.
 
 ## Pretrained Checkpoints
 
@@ -128,4 +130,31 @@ The authors provided the finetuned checkpoints used in the paper.
 | CNNDM    |  T5-large  |  [link](https://huggingface.co/kssteven/T5-large-cnndm) | 
 
 ### Aligned Models
-We are currently training our own aligned models to reproduce the methodology used in the paper. We will provide the links to the checkpoints once they are available.
+We trained our own aligned models using the outputs of the authors' large finetuned models on each of the four benchmarks. We prove the links to these aligned models below.
+
+| Benchmark for Alignment | Link |
+| ----------------- | ---- |
+| IWSLT-2017-De-En  | To be added |
+| WMT-2014-De-En    | [link](https://huggingface.co/paulh27/wmt_aligned_smallmT5) |
+| XSUM              | [link](https://huggingface.co/paulh27/xsum_aligned_smallmT5) |
+| CNNDM             | [link](https://huggingface.co/paulh27/cnn_aligned_smallT5) |
+
+### Alignment Datasets
+The general idea of alignment is to align the predictions produced by the small and large models. As part of this process, we require a calibration dataset for each benchmark which represents the output sentence distribution of the large model. Then, we fine-tune the small model on this dataset so that it will better follow the output distribution of the large model. To create the calibration dataset for a particular benchmark, we take the inputs of the benchmark dataset and generate the corresponding output sequence using the large model, which creates the (input, output) dataset samples. 
+
+The authors did not open source the calibration datasets. As such, we had to create these ourselves, which we link below.
+
+| Calibration Dataset | Link |
+| ----------------- | ---- |
+| IWSLT-2017-De-En  | [link](https://huggingface.co/datasets/paulh27/alignment_iwslt2017_de_en) |
+| WMT-2014-De-En    | [link](https://huggingface.co/datasets/paulh27/alignment_wmt2014_de_en) |
+| XSUM              | [link](https://huggingface.co/datasets/lilferrit/xsum_t5_distillation) |
+| CNNDM             | [link](https://huggingface.co/datasets/lilferrit/cnn_dailymail_t5_distillation) |
+
+## Further Extensions
+As part of the reproduction, we additionally conducted several experiments not done in the paper to probe the robustness of the Big-Little decoding architecture. 
+
+### Ablation on 
+
+
+
