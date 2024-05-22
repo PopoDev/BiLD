@@ -132,11 +132,6 @@ if __name__ == "__main__":
     parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt14", "xsum", "cnn_dailymail"], help="Experiment to run.")
     args = parser.parse_args()
 
-    show_performance(args.experiment, "tesla-t4", speedup=True)
     show_performance(args.experiment, "tesla-t4", speedup=False)
-
-    show_performance(args.experiment, "tesla-t4", speedup=True, best="score")
     show_performance(args.experiment, "tesla-t4", speedup=False, best="score")
-
-    show_performance(args.experiment, "tesla-t4", speedup=True, best="latency")
     show_performance(args.experiment, "tesla-t4", speedup=False, best="latency")
