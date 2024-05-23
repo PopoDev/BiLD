@@ -128,6 +128,7 @@ def run_translation(parser: HfArgumentParser):
             data_args.dataset_name,
             data_args.dataset_config_name,
             cache_dir=model_args.cache_dir,
+            trust_remote_code=model_args.trust_remote_code,
         )
     else:
         data_files = {}
@@ -150,6 +151,7 @@ def run_translation(parser: HfArgumentParser):
             builder_name,
             data_files=data_files,
             cache_dir=model_args.cache_dir,
+            trust_remote_code=model_args.trust_remote_code,
         )
 
     # Load pretrained model and tokenizer
