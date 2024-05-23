@@ -49,6 +49,12 @@ class ModelArguments:
             "help": "Threshold probability for rollback to small model predictions; for BiLD evaluation"
         },
     )
+    num_small_iters: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "Number of iterations to use small model; for BiLD evaluation"
+        },
+    )
     tokenizer_name: Optional[str] = field(
         default=None,
         metadata={

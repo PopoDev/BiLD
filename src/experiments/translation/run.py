@@ -190,7 +190,7 @@ def run_translation(parser: HfArgumentParser):
             small=model_small,
             fallback_threshold=model_args.fallback_threshold,
             rollback_threshold=model_args.rollback_threshold,
-            num_small_iters=model_args.num_small_iters,
+            num_small_iters=model_args.num_small_iters if model_args.num_small_iters else 10,
         )
         logger.info("Using BiLD model")
     else:
@@ -509,6 +509,9 @@ def run_translation(parser: HfArgumentParser):
             if hasattr(model, 'fallback_threshold') and hasattr(model, 'rollback_threshold'):
                 attributes.append(f"fb={model.fallback_threshold}")
                 attributes.append(f"rb={model.rollback_threshold}")
+            
+            if model_args.num_small_iters:
+                attributes.append(f"nsi={model_args.num_small_iters}")
             
             results_file = f"{'_'.join(attributes)}.json"
 
