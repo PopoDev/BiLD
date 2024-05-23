@@ -134,7 +134,7 @@ We trained our own aligned models using the outputs of the authors' large finetu
 
 | Benchmark for Alignment | Link |
 | ----------------- | ---- |
-| IWSLT-2017-De-En  | To be added |
+| IWSLT-2017-De-En  | [link](https://huggingface.co/paulh27/iwslt_aligned_smallT5_cont0) |
 | WMT-2014-De-En    | [link](https://huggingface.co/paulh27/wmt_aligned_smallmT5) |
 | XSUM              | [link](https://huggingface.co/paulh27/xsum_aligned_smallmT5) |
 | CNNDM             | [link](https://huggingface.co/paulh27/cnn_aligned_smallT5) |
