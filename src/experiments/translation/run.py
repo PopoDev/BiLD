@@ -190,6 +190,7 @@ def run_translation(parser: HfArgumentParser):
             small=model_small,
             fallback_threshold=model_args.fallback_threshold,
             rollback_threshold=model_args.rollback_threshold,
+            num_small_iters=model_args.num_small_iters,
         )
         logger.info("Using BiLD model")
     else:
@@ -338,7 +339,7 @@ def run_translation(parser: HfArgumentParser):
         if "validation" not in raw_datasets:
             raise ValueError("--do_eval requires a validation dataset")
         eval_dataset = raw_datasets["validation"]
-        eval_dataset.to_json("data/eval_dataset.json")
+        eval_dataset.to_json(f"data/{data_args.dataset_name}/eval_dataset.json")
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(max_eval_samples))
@@ -359,6 +360,7 @@ def run_translation(parser: HfArgumentParser):
         if "test" not in raw_datasets:
             raise ValueError("--do_predict requires a test dataset")
         predict_dataset = raw_datasets["test"]
+        predict_dataset.to_json(f"data/{data_args.dataset_name}/predict_dataset.json")
         if data_args.max_predict_samples is not None:
             max_predict_samples = min(
                 len(predict_dataset), data_args.max_predict_samples
@@ -550,5 +552,42 @@ def run_translation(parser: HfArgumentParser):
                 )
                 with open(output_prediction_file, "w", encoding="utf-8") as writer:
                     writer.write("\n".join(predictions))
+                
+                inputs = []
+                labels = []
+                with open(f"data/{data_args.dataset_name}/predict_dataset.json", "r") as f:
+                    for i, line in enumerate(f):
+                        if i >= max_predict_samples:
+                            break
+                    
+                        data = json.loads(line)
+                        print(data)
+                        inputs.append(data['translation'][source_lang])
+                        labels.append(data['translation'][target_lang])
+
+                translations = [
+                    {
+                        "inputs": input,
+                        "reference_translation": reference,
+                        "generated_translation": generated,
+                    }
+                    for input, reference, generated in zip(inputs, labels, predictions)
+                ]
+
+                gpu_name = torch.cuda.get_device_name(torch.cuda.current_device())
+                gpu_num = torch.cuda.device_count()
+                results_dir = training_args.output_dir.replace("out", f"results/{gpu_name.replace(' ', '_')}-{gpu_num}")
+                if not os.path.exists(results_dir):
+                    os.makedirs(results_dir)
+                
+                attributes = [data_args.dataset_name]
+                if hasattr(model, 'fallback_threshold') and hasattr(model, 'rollback_threshold'):
+                    attributes.append(f"fb={model.fallback_threshold}")
+                    attributes.append(f"rb={model.rollback_threshold}")
+                
+                results_file = f"{'_'.join(attributes)}.json"
+
+                with open(f"{results_dir}/{results_file}", "w") as f:
+                    json.dump(translations, f, indent=4)
 
     return results
