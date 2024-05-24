@@ -393,7 +393,9 @@ def run_translation(parser: HfArgumentParser):
         )
 
     # Metric
-    metric = evaluate.load("sacrebleu", cache_dir=model_args.cache_dir)
+    metric_dict = {}
+    for metric in data_args.metrics:
+        metric_dict[metric] = evaluate.load(metric, cache_dir=model_args.cache_dir)
 
     def postprocess_text(preds, labels):
         preds = [pred.strip() for pred in preds]
@@ -414,16 +416,17 @@ def run_translation(parser: HfArgumentParser):
         # Some simple post-processing
         decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
 
-        result = metric.compute(predictions=decoded_preds, references=decoded_labels)
-        result = {"bleu": result["score"]}
-
-        print(result)
+        result = {}
+        for metric_name, metric in metric_dict.items():
+            score = metric.compute(predictions=decoded_preds, references=decoded_labels)
+            if "score" in score:
+                score = {metric_name: score["score"]}
+            result[metric_name] = score[metric_name]
 
         prediction_lens = [
             np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds
         ]
         result["gen_len"] = np.mean(prediction_lens)
-        result = {k: round(v, 4) for k, v in result.items()}
         print(result)
         return result
 
