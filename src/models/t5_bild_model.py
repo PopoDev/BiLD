@@ -59,6 +59,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             output_scores=True,
             output_logits=True,
             _from_model_config=False,
+            use_cache=True,
         )
 
     def can_generate(self):
@@ -461,24 +462,36 @@ class T5BiLDModel(nn.Module, GenerationMixin):
     def generate(
         self,
         inputs: Optional[torch.Tensor] = None,
+        use_cache: Optional[bool] = True,
         **kwargs,
     ) -> Union[GenerateOutput, torch.LongTensor]:
         r"""
         Generates sequences of token ids for models with a language modeling head.
         """
-        logger.debug(f"BiLD generate: inputs: {inputs}, kwargs: {kwargs}")
-        
+                
         relevant_model_kwargs = ["input_ids", "attention_mask"]
         model_kwargs = {
             argument: value
             for argument, value in kwargs.items() if argument in relevant_model_kwargs
         }
 
-        # Define model inputs
+        # 3. Define model inputs
+        # inputs_tensor has to be defined
+        # model_input_name is defined if model-specific keyword input is passed
+        # otherwise model_input_name is None
+        # all model-specific keyword inputs are removed from `model_kwargs`
         inputs_tensor, model_input_name, model_kwargs = self._prepare_model_inputs(
             inputs, self.generation_config.bos_token_id, model_kwargs
         )
         batch_size = inputs_tensor.shape[0]
+
+        # 4. Define other model kwargs
+        # decoder-only models with inputs_embeds forwarding must use caching (otherwise we can't detect whether we are
+        # generating the first new token or not, and we only want to use the embeddings for the first new token)
+        if not self.config.is_encoder_decoder and model_input_name == "inputs_embeds":
+            model_kwargs["use_cache"] = True
+        else:
+            model_kwargs["use_cache"] = self.generation_config.use_cache
 
         if self.generation_config.is_encoder_decoder and "encoder_outputs" not in model_kwargs:
             # if model is encoder decoder encoder_outputs are created

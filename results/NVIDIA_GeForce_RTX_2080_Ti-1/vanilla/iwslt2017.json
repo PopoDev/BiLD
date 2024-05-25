@@ -1,9 +1,10 @@
 {
     "eval_loss": 0.9288562536239624,
-    "eval_bleu": 40.3281,
-    "eval_gen_len": 29.0676,
-    "eval_runtime": 1183.9788,
-    "eval_samples_per_second": 0.75,
-    "eval_steps_per_second": 0.75,
+    "eval_sacrebleu": 40.328108333143554,
+    "eval_meteor": 0.7068087416187642,
+    "eval_gen_len": 29.06756756756757,
+    "eval_runtime": 1185.9783,
+    "eval_samples_per_second": 0.749,
+    "eval_steps_per_second": 0.749,
     "eval_samples": 888
 }
