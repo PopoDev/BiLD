@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from dataclasses import dataclass, field
 
 @dataclass
@@ -49,6 +49,12 @@ class ModelArguments:
             "help": "Threshold probability for rollback to small model predictions; for BiLD evaluation"
         },
     )
+    num_small_iters: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": "Number of iterations to use small model; for BiLD evaluation"
+        },
+    )
     tokenizer_name: Optional[str] = field(
         default=None,
         metadata={
@@ -65,6 +71,16 @@ class ModelArguments:
         default=True,
         metadata={
             "help": "Whether to use one of the fast tokenizer (backed by the tokenizers library) or not."
+        },
+    )
+    trust_remote_code: bool = field(
+        default=False,
+        metadata={
+            "help": (
+                "Whether or not to allow for custom models defined on the Hub in their own modeling files. This option "
+                "should only be set to `True` for repositories you trust and in which you have read the code, as it will "
+                "execute code present on the Hub on your local machine."
+            )
         },
     )
 
@@ -210,6 +226,10 @@ class DataTrainingArguments:
                 " be the target language token.(Usually it is the target language token)"
             )
         },
+    )
+    metrics: Optional[List[str]] = field(
+        default_factory=lambda: ["sacrebleu"],
+        metadata={"help": "Evaluation metrics to use."},
     )
 
     def __post_init__(self):

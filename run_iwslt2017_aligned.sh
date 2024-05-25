@@ -12,7 +12,7 @@ python src/run_translation.py \
 --source_lang de --target_lang en \
 --fallback_threshold $fallback_threshold \
 --rollback_threshold $rollback_threshold \
---metric_for_best_model bleu \
+--metrics sacrebleu meteor \
 --num_beam 1 \
 --evaluation_strategy epoch --save_strategy epoch \
 --do_eval \

@@ -1,0 +1,52 @@
+[
+    {
+        "inputs": "Vor einigen Jahren, hier bei TED, stellte Peter Skillman einen Design-Wettbewerb namens \"Die Marshmallow-Herausforderung\" vor.",
+        "reference_translation": "Several years ago here at TED, Peter Skillman  introduced a design challenge  called the marshmallow challenge.",
+        "generated_translation": "A few years ago here at TED, Peter Skillman introduced a design competition called the Marshmallow Challenge."
+    },
+    {
+        "inputs": "Die Idee ist ziemlich einfach. Vierer-teams m\u00fcssen die gr\u00f6\u00dftm\u00f6gliche freistehende Struktur mit 20 Spaghetti, ca. 1m Klebeband, ca. 1m Faden und einem Marshmallow bauen.",
+        "reference_translation": "And the idea's pretty simple:  Teams of four have to build the tallest free-standing structure  out of 20 sticks of spaghetti,  one yard of tape, one yard of string  and a marshmallow.",
+        "generated_translation": "The idea is pretty simple. Four teams have to build the largest open-ended structure with 20 spaghetti, about a meter of tape, about a meter of thread and a marshmallow."
+    },
+    {
+        "inputs": "Der Marshmallow muss oben drauf sein.",
+        "reference_translation": "The marshmallow has to be on top.",
+        "generated_translation": "The marshmallow has to be on top."
+    },
+    {
+        "inputs": "Und, obwohl es wirklich einfach scheint, ist es tats\u00e4chlich richtig schwer, weil es Leute dr\u00e4ngt sehr schnell zusammenzuarbeiten.",
+        "reference_translation": "And, though it seems really simple, it's actually pretty hard  because it forces people  to collaborate very quickly.",
+        "generated_translation": "And although it looks really simple, it's actually really hard, because it forces people to work together very quickly."
+    },
+    {
+        "inputs": "Und so dachte ich, dass dies eine interessante Idee ist und ich habe es in einen Design-Workshop verwandelt.",
+        "reference_translation": "And so, I thought this was an interesting idea,  and I incorporated it into a design workshop.",
+        "generated_translation": "And so I thought this was an interesting idea, and I turned it into a design workshop."
+    },
+    {
+        "inputs": "Es war ein riesiger Erfolg.",
+        "reference_translation": "And it was a huge success.",
+        "generated_translation": "It was a huge success."
+    },
+    {
+        "inputs": "Seitdem habe ich ungef\u00e4hr 70 Workshops weltweit durchgef\u00fchrt, mit Studenten, Entwicklern und Architekten, sogar mit CTOs der Fortune-50-Unternehmen und da ist etwas an dieser Aufgabe, was tiefe Eindr\u00fccke in die Natur der Zusammenarbeit erm\u00f6glicht und ich m\u00f6chte einige davon mit Ihnen teilen.",
+        "reference_translation": "And since then, I've conducted  about 70 design workshops across the world  with students and designers and architects,  even the CTOs of the Fortune 50,  and there's something about this exercise  that reveals very deep lessons  about the nature of collaboration,  and I'd like to share some of them with you.",
+        "generated_translation": "Since then, I've done about 70 workshops around the world with students, developers and architects, even CTOs of Fortune 50 companies, and there's something about this task that gives us deep insights into the nature of collaboration, and I want to share some of those with you."
+    },
+    {
+        "inputs": "Normalerweise starten die meisten Leute sich selbst bez\u00fcglich der Aufgabe zu orientieren.",
+        "reference_translation": "So, normally, most people begin  by orienting themselves to the task.",
+        "generated_translation": "Usually most people start to orient themselves in terms of the task."
+    },
+    {
+        "inputs": "Sie reden dar\u00fcber, sie \u00fcberlegen, wie es aussehen wird, sie rangeln um Macht,",
+        "reference_translation": "They talk about it, they figure out what it's going to look like,  they jockey for power.",
+        "generated_translation": "They talk about it, they think what it's going to look like, they reach out for power."
+    },
+    {
+        "inputs": "dann investieren Sie ein wenig Zeit in Planung und Organisation. Sie skizzieren und legen Spaghetti aus.",
+        "reference_translation": "Then they spend some time planning, organizing,  they sketch and they lay out spaghetti.",
+        "generated_translation": "You spend a little bit of time planning and organization, sketching and making spaghetti."
+    }
+]

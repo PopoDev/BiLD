@@ -4,7 +4,7 @@ python src/run_translation.py \
 --tokenizer_name google/mt5-small \
 --dataset_name iwslt2017 --dataset_config_name iwslt2017-de-en \
 --source_lang de --target_lang en \
---metric_for_best_model bleu \
+--metrics sacrebleu meteor \
 --num_beam 1 \
 --evaluation_strategy epoch --save_strategy epoch \
 --do_eval \
