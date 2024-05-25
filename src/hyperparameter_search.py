@@ -48,12 +48,33 @@ translation_command_template = Template(
 --max_eval_samples $max_eval_samples"""
 )
 
+
+api_gen_command_template = Template(
+"""python src/run_api_generation.py 
+--output_dir $output_dir
+--cache_dir /tmp/cache
+--model_name_large $model_name_large 
+--model_name_small $model_name_small
+--tokenizer_name $tokenizer_name
+--dataset_name $dataset_name 
+--source_prefix ""
+--fallback_threshold $fallback_threshold 
+--rollback_threshold $rollback_threshold 
+--num_beam 1 
+--evaluation_strategy epoch --save_strategy epoch 
+--do_eval 
+--per_device_eval_batch_size 1 
+--trust_remote_code True 
+--predict_with_generate
+"""
+)
+
 def cleanup():
     torch.distributed.destroy_process_group()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt2014", "xsum", "cnndm"], help="Experiment to run.")
+    parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt2014", "xsum", "cnndm", "api_gen"], help="Experiment to run.")
     parser.add_argument("--fb_thresholds", nargs="+", type=float, default=FB_THRESHOLDS, help="List of FB thresholds.")
     parser.add_argument("--rb_thresholds", nargs="+", type=int, default=RB_THRESHOLDS, help="List of RB thresholds.")
     parser.add_argument("--output_dir", type=str, default=None, help="Output directory to put results.")
@@ -85,6 +106,16 @@ if __name__ == "__main__":
                     'fallback_threshold': fb_threshold,
                     'rollback_threshold': rb_threshold,
                     'max_eval_samples': args.max_eval_samples
+                })
+            elif args.experiment == 'api_gen':
+                command = api_gen_command_template.substitute({
+                    'output_dir': f"{args.output_dir}/{args.experiment}/fb={fb_threshold}_rb={rb_threshold}",
+                    'model_name_large': args.model_name_large,
+                    'model_name_small': args.model_name_small,
+                    'tokenizer_name': args.tokenizer_name,
+                    'dataset_name': args.dataset_name,
+                    'fallback_threshold': fb_threshold,
+                    'rollback_threshold': rb_threshold,
                 })
             else:
                 command = summarization_command_template.substitute({

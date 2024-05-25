@@ -399,6 +399,7 @@ def run_translation(parser: HfArgumentParser):
 
     def compute_metrics(eval_preds):
         preds, labels = eval_preds
+
         if isinstance(preds, tuple):
             preds = preds[0]
         # Replace -100s used for padding as we can't decode them
@@ -412,15 +413,11 @@ def run_translation(parser: HfArgumentParser):
 
         result = metric.compute(predictions=decoded_preds, references=decoded_labels)
         result = {"bleu": result["score"]}
-
-        print(result)
-
         prediction_lens = [
             np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds
         ]
         result["gen_len"] = np.mean(prediction_lens)
         result = {k: round(v, 4) for k, v in result.items()}
-        print(result)
         return result
 
     # Initialize our Trainer

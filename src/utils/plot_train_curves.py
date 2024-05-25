@@ -27,11 +27,11 @@ if __name__ == '__main__':
       val_metrics.append(metric)
 
   # Extract the 
-  align_trainer_state_dir = '/local1/hfs/CSE481N_Project/data/trainer_states_aligned_xsum'
+  align_trainer_state_dir = '/local1/hfs/CSE481N_Project/data/trainer_states/iswslt_aligned_small.json'
   val_epochs_ours = []
   val_metrics_ours = []
   epoch = 0
-  for i in range(4):
+  for i in range(0):
     file = open(f"{align_trainer_state_dir}/trainer_state{i}.json")
     state = json.load(file)
     last_epoch = 0

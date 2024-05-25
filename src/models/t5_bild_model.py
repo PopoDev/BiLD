@@ -37,6 +37,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
         self.fallback_threshold = fallback_threshold or 0.6
         self.rollback_threshold = rollback_threshold or 5.0
+        self.temp_fallback_threshold = self.fallback_threshold
+        self.temp_rollback_threshold = self.rollback_threshold
 
         self.generate_count = 0
         self.fallback_count = 0
@@ -61,6 +63,9 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             _from_model_config=False,
         )
 
+        self.num_fallbacks = 0
+        self.num_rollbacks = 0
+
     def can_generate(self):
         return True
 
@@ -84,7 +89,6 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         assert init_with in ["large", "small"]
 
         self.model_type = init_with
-        self.iter_count = self.num_large_iters
 
         self.large_kwargs = copy.deepcopy(model_kwargs)
         self.small_kwargs = copy.deepcopy(model_kwargs)
@@ -98,8 +102,11 @@ class T5BiLDModel(nn.Module, GenerationMixin):
 
         if init_with == "large":
             self.model_kwargs = self.large_kwargs
+            self.iter_count = self.num_large_iters
         else:  # small
             self.model_kwargs = self.small_kwargs
+            self.iter_count = self.num_small_iters
+
         
     def schedule_iters(self, fall_back_to_large=False, fall_back_to_small=False):
         """
@@ -313,7 +320,13 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                 # if fall back, we ignore the current run
                 # the large model will produce the same token (i.e. redundant)
                 logger.info(f"Fall back to large model, score: {score.max()}, next_token: {next_tokens}")
+                self.num_fallbacks += 1
                 self.fallback_count += 1
+
+                # if self.num_fallbacks >= 3:
+                #     self.fallback_threshold = 0
+                #     self.rollback_threshold = 100
+                #     self.num_small_iters= 10000
                 self.schedule_iters(fall_back_to_large=True)
                 continue
 
@@ -349,6 +362,7 @@ class T5BiLDModel(nn.Module, GenerationMixin):
                     # if there exists any predictions that deviates above threshold vs. the large model's prediction
                     if loss_above_thres.any():
                         logger.info(f"Rolling back to large model, max loss: {loss.max()}")
+                        self.num_rollbacks += 1
                         # get the earliest index among those above-threshold prediction
                         first_idx_loss_above_thres = loss_above_thres.to(
                             torch.int
@@ -467,6 +481,11 @@ class T5BiLDModel(nn.Module, GenerationMixin):
         Generates sequences of token ids for models with a language modeling head.
         """
         logger.debug(f"BiLD generate: inputs: {inputs}, kwargs: {kwargs}")
+        self.num_rollbacks = 0
+        self.num_fallbacks = 0
+        self.fallback_threshold = self.temp_fallback_threshold
+        self.rollback_threshold = self.temp_rollback_threshold
+        self.num_small_iters = 10
         
         relevant_model_kwargs = ["input_ids", "attention_mask"]
         model_kwargs = {
@@ -508,5 +527,8 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             stopping_criteria=self.stopping_criteria,
             **model_kwargs,
         )
+
+        # logger.warning(f"Num FB: {self.num_fallbacks}")
+        # logger.warning(f"Num RB: {self.num_rollbacks}")
 
         return result
