@@ -526,7 +526,6 @@ class T5BiLDModel(nn.Module, GenerationMixin):
             model_input_name=model_input_name,
             model_kwargs=model_kwargs,
             decoder_start_token_id=self.generation_config.decoder_start_token_id,
-            bos_token_id=self.generation_config.bos_token_id,
             device=inputs_tensor.device,
         )
 
