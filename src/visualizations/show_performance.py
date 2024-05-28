@@ -125,13 +125,13 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
             plt.annotate(f"({data['fb_threshold']}, {int(data['rb_threshold'])})", (measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]), data[metric_key]))
 
     plt.legend()
-    # plt.savefig(RESULTS_DIR + f"{experiment}_{hardware}_{'speedup' if speedup else 'latency'}_{'best_' + best if best else 'all'}.png")
-    plt.savefig(f"{experiment}_{hardware}_{'speedup' if speedup else 'latency'}_{'best_' + best if best else 'all'}.png")
+    plt.tight_layout()
+    plt.savefig(f"{experiment}_{hardware}_{'speedup' if speedup else 'latency'}_{'best_' + best if best else 'all'}.pdf", format="pdf")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt14", "xsum", "cnn_dailymail"], help="Experiment to run.")
-    parser.add_argument("--hardware", type=str, default="tesla-t4", choices=["tesla-t4", "wmt14", "xsum", "cnn_dailymail"], help="Experiment to run.")
+    parser.add_argument("--hardware", type=str, default="tesla-t4", choices=["tesla-t4", "rtx-2080"], help="Hardware used.")
 
     args = parser.parse_args()
 

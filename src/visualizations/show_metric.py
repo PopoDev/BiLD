@@ -104,6 +104,7 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
 
     ax1.set_ylabel(metric_labels[0])
     ax1.axhline(y=vanilla_data[metric_keys[0]], color='blue', linestyle='--')
+    pt1 = ax1.scatter(1, vanilla_data[metric_keys[0]], color='blue', label=f"Vanilla {metric_labels[0]}", marker='x')
 
     lns1 = ax1.plot(
         [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in aligned_data],
@@ -121,6 +122,7 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
     ax2 = ax1.twinx()
     ax2.set_ylabel(metric_labels[1])
     ax2.axhline(y=vanilla_data[metric_keys[1]], color='red', linestyle='--')
+    pt2 = ax2.scatter(1, vanilla_data[metric_keys[1]], color='red', label=f"Vanilla {metric_labels[1]}", marker='x')
 
     lns2 = ax2.plot(
         [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in aligned_data],
@@ -134,10 +136,8 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
     #     label=f"Unaligned {metric_labels[1]}", marker='s', linestyle="--", color='red'
     # )
 
-    # Combine handles and labels from both axes
-    lns = lns1 + lns2
-    labs = [l.get_label() for l in lns]
-    ax1.legend(lns, labs, loc='lower right')
+    ax1.legend(loc='lower right', bbox_to_anchor=(1, 0.1))
+    ax2.legend(loc='lower right')
 
     plt.tight_layout()
     plt.legend()
