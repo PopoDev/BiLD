@@ -1,13 +1,13 @@
 {
-    "eval_loss": 2.660362958908081,
-    "eval_rouge1": 43.5681,
-    "eval_rouge2": 28.9636,
-    "eval_rougeL": 39.8399,
-    "eval_rougeLsum": 43.493,
-    "eval_bleu": 20.8416,
-    "eval_gen_len": 19.27,
-    "eval_runtime": 83.4761,
-    "eval_samples_per_second": 1.198,
-    "eval_steps_per_second": 1.198,
-    "eval_samples": 100
+    "eval_loss": 2.7222232818603516,
+    "eval_rouge1": 43.0827,
+    "eval_rouge2": 29.8629,
+    "eval_rougeL": 40.833,
+    "eval_rougeLsum": 43.0038,
+    "eval_bleu": 20.0039,
+    "eval_gen_len": 20.830807046292502,
+    "eval_runtime": 2086.2535,
+    "eval_samples_per_second": 1.17,
+    "eval_steps_per_second": 1.17,
+    "eval_samples": 2441
 }
