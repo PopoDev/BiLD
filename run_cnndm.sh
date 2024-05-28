@@ -33,4 +33,4 @@ python src/run_summarization.py $model_args \
     --per_device_eval_batch_size 1 \
     --trust_remote_code True \
     --predict_with_generate \
-    --max_eval_samples $max_eval_samples" 
+    --max_eval_samples $max_eval_samples 
