@@ -22,17 +22,6 @@ case "$model" in
         ;;
 esac
 
-common_args="--output_dir ./out/$model \
-    --tokenizer_name google-t5/t5-small \
-    --dataset_name paulh27/java_code_api_generation \
-    --num_beam 1 \
-    --evaluation_strategy epoch --save_strategy epoch \
-    --do_eval \
-    --per_device_eval_batch_size 1 \
-    --trust_remote_code True \
-    --predict_with_generate \
-    --max_eval_samples $max_eval_samples"
-
 python src/run_summarization.py $model_args \
     --output_dir ./out/$model \
     --tokenizer_name SEBIS/code_trans_t5_small_api_generation_transfer_learning_finetune \
