@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import List, Optional
 
 @dataclass
 class ModelArguments:
@@ -224,6 +224,11 @@ class DataTrainingArguments:
                 "needs to be the target language token (Usually it is the target language token)"
             )
         },
+    )
+
+    metrics: Optional[List[str]] = field(
+        default_factory=lambda: ["rouge"],
+        metadata={"help": "Evaluation metrics to use."},
     )
 
     def __post_init__(self):

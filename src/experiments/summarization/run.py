@@ -391,7 +391,9 @@ def run_summarization(parser: HfArgumentParser):
     )
 
     # Metric
-    metric = evaluate.load("rouge", cache_dir=model_args.cache_dir)
+    metric_dict = {}
+    for metric in data_args.metrics:
+        metric_dict[metric] = evaluate.load(metric, cache_dir=model_args.cache_dir)
 
     def postprocess_text(preds, labels):
         preds = [pred.strip() for pred in preds]
@@ -416,7 +418,15 @@ def run_summarization(parser: HfArgumentParser):
         # Some simple post-processing
         decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
 
-        result = metric.compute(predictions=decoded_preds, references=decoded_labels, use_stemmer=True)
+        result = {}
+        for metric_name, metric in metric_dict.items():
+            score = metric.compute(predictions=decoded_preds, references=decoded_labels)
+            for key, value in score.items():
+                if "score" in key:
+                    result[metric_name] = value
+                if metric_name in key:
+                    result[key] = value
+
         result = {k: round(v * 100, 4) for k, v in result.items()}
         prediction_lens = [np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds]
         result["gen_len"] = np.mean(prediction_lens)
@@ -490,7 +500,7 @@ def run_summarization(parser: HfArgumentParser):
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)
         
-        attributes = [data_args.dataset_name]
+        attributes = [data_args.dataset_name.split('/')[-1]]  # remove repo name
         if hasattr(model, 'fallback_threshold') and hasattr(model, 'rollback_threshold'):
             attributes.append(f"fb={model.fallback_threshold}")
             attributes.append(f"rb={model.rollback_threshold}")

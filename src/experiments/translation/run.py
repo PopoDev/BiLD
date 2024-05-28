@@ -420,9 +420,11 @@ def run_translation(parser: HfArgumentParser):
         result = {}
         for metric_name, metric in metric_dict.items():
             score = metric.compute(predictions=decoded_preds, references=decoded_labels)
-            if "score" in score:
-                score = {metric_name: score["score"]}
-            result[metric_name] = score[metric_name]
+            for key, value in score.items():
+                if "score" in key:
+                    result[metric_name] = value
+                if metric_name in key:
+                    result[key] = value
 
         prediction_lens = [
             np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds
