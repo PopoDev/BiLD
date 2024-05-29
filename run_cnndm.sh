@@ -11,7 +11,11 @@ case "$model" in
         if [ "$model" == "aligned" ]; then
             model_name_small="kssteven/T5-small-cnndm-bild-aligned"
         fi
-        model_args="--model_name_large kssteven/T5-large-cnndm --model_name_small $model_name_small --fallback_threshold $fallback_threshold --rollback_threshold $rollback_threshold"
+        model_args="
+        --model_name_large kssteven/T5-large-cnndm \
+        --model_name_small $model_name_small \
+        --fallback_threshold $fallback_threshold --rollback_threshold $rollback_threshold \
+        --max_eval_samples $max_eval_samples"
         ;;
     vanilla)
         model_args="--model_name kssteven/T5-large-cnndm"
@@ -32,5 +36,4 @@ python src/run_summarization.py $model_args \
     --do_eval \
     --per_device_eval_batch_size 1 \
     --trust_remote_code True \
-    --predict_with_generate \
-    --max_eval_samples $max_eval_samples 
+    --predict_with_generate
