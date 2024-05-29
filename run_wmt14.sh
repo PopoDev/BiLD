@@ -11,9 +11,7 @@ case "$model" in
         if [ "$model" == "aligned" ]; then
             model_name_small="kssteven/mT5-small-wmt2014-de-en-bild-aligned"
         fi
-        model_args="
-        --model_name_large kssteven/mT5-large-wmt2014-de-en \
-        --model_name_small $model_name_small \
+        model_args="--model_name_large kssteven/mT5-large-wmt2014-de-en --model_name_small $model_name_small \
         --fallback_threshold $fallback_threshold --rollback_threshold $rollback_threshold \
         --max_eval_samples $max_eval_samples"
         ;;

@@ -7,8 +7,7 @@ max_eval_samples=${4:-2441}  # debug
 
 case "$model" in
     unaligned)
-        model_args="
-        --model_name_large SEBIS/code_trans_t5_large_api_generation_transfer_learning_finetune \
+        model_args="--model_name_large SEBIS/code_trans_t5_large_api_generation_transfer_learning_finetune \
         --model_name_small SEBIS/code_trans_t5_small_api_generation_transfer_learning_finetune \
         --fallback_threshold $fallback_threshold --rollback_threshold $rollback_threshold \
         --max_eval_samples $max_eval_samples"
