@@ -128,6 +128,7 @@ def run_translation(parser: HfArgumentParser):
             data_args.dataset_name,
             data_args.dataset_config_name,
             cache_dir=model_args.cache_dir,
+            trust_remote_code=model_args.trust_remote_code,
         )
     else:
         data_files = {}
@@ -150,6 +151,7 @@ def run_translation(parser: HfArgumentParser):
             builder_name,
             data_files=data_files,
             cache_dir=model_args.cache_dir,
+            trust_remote_code=model_args.trust_remote_code,
         )
 
     # Load pretrained model and tokenizer
@@ -188,6 +190,7 @@ def run_translation(parser: HfArgumentParser):
             small=model_small,
             fallback_threshold=model_args.fallback_threshold,
             rollback_threshold=model_args.rollback_threshold,
+            num_small_iters=model_args.num_small_iters if model_args.num_small_iters else 10,
         )
         logger.info("Using BiLD model")
     else:
@@ -336,7 +339,7 @@ def run_translation(parser: HfArgumentParser):
         if "validation" not in raw_datasets:
             raise ValueError("--do_eval requires a validation dataset")
         eval_dataset = raw_datasets["validation"]
-        eval_dataset.to_json("data/eval_dataset.json")
+        eval_dataset.to_json(f"data/{data_args.dataset_name}/eval_dataset.json")
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(max_eval_samples))
@@ -357,6 +360,7 @@ def run_translation(parser: HfArgumentParser):
         if "test" not in raw_datasets:
             raise ValueError("--do_predict requires a test dataset")
         predict_dataset = raw_datasets["test"]
+        predict_dataset.to_json(f"data/{data_args.dataset_name}/predict_dataset.json")
         if data_args.max_predict_samples is not None:
             max_predict_samples = min(
                 len(predict_dataset), data_args.max_predict_samples
@@ -389,7 +393,9 @@ def run_translation(parser: HfArgumentParser):
         )
 
     # Metric
-    metric = evaluate.load("sacrebleu", cache_dir=model_args.cache_dir)
+    metric_dict = {}
+    for metric in data_args.metrics:
+        metric_dict[metric] = evaluate.load(metric, cache_dir=model_args.cache_dir)
 
     def postprocess_text(preds, labels):
         preds = [pred.strip() for pred in preds]
@@ -399,6 +405,7 @@ def run_translation(parser: HfArgumentParser):
 
     def compute_metrics(eval_preds):
         preds, labels = eval_preds
+
         if isinstance(preds, tuple):
             preds = preds[0]
         # Replace -100s used for padding as we can't decode them
@@ -410,16 +417,19 @@ def run_translation(parser: HfArgumentParser):
         # Some simple post-processing
         decoded_preds, decoded_labels = postprocess_text(decoded_preds, decoded_labels)
 
-        result = metric.compute(predictions=decoded_preds, references=decoded_labels)
-        result = {"bleu": result["score"]}
-
-        print(result)
+        result = {}
+        for metric_name, metric in metric_dict.items():
+            score = metric.compute(predictions=decoded_preds, references=decoded_labels)
+            for key, value in score.items():
+                if "score" in key:
+                    result[metric_name] = value
+                if metric_name in key:
+                    result[key] = value
 
         prediction_lens = [
             np.count_nonzero(pred != tokenizer.pad_token_id) for pred in preds
         ]
         result["gen_len"] = np.mean(prediction_lens)
-        result = {k: round(v, 4) for k, v in result.items()}
         print(result)
         return result
 
@@ -506,6 +516,9 @@ def run_translation(parser: HfArgumentParser):
                 attributes.append(f"fb={model.fallback_threshold}")
                 attributes.append(f"rb={model.rollback_threshold}")
             
+            if model_args.num_small_iters:
+                attributes.append(f"nsi={model_args.num_small_iters}")
+            
             results_file = f"{'_'.join(attributes)}.json"
 
             with open(f"{results_dir}/{results_file}", "w") as f:
@@ -548,5 +561,42 @@ def run_translation(parser: HfArgumentParser):
                 )
                 with open(output_prediction_file, "w", encoding="utf-8") as writer:
                     writer.write("\n".join(predictions))
+                
+                inputs = []
+                labels = []
+                with open(f"data/{data_args.dataset_name}/predict_dataset.json", "r") as f:
+                    for i, line in enumerate(f):
+                        if i >= max_predict_samples:
+                            break
+                    
+                        data = json.loads(line)
+                        print(data)
+                        inputs.append(data['translation'][source_lang])
+                        labels.append(data['translation'][target_lang])
+
+                translations = [
+                    {
+                        "inputs": input,
+                        "reference_translation": reference,
+                        "generated_translation": generated,
+                    }
+                    for input, reference, generated in zip(inputs, labels, predictions)
+                ]
+
+                gpu_name = torch.cuda.get_device_name(torch.cuda.current_device())
+                gpu_num = torch.cuda.device_count()
+                results_dir = training_args.output_dir.replace("out", f"results/{gpu_name.replace(' ', '_')}-{gpu_num}")
+                if not os.path.exists(results_dir):
+                    os.makedirs(results_dir)
+                
+                attributes = [data_args.dataset_name]
+                if hasattr(model, 'fallback_threshold') and hasattr(model, 'rollback_threshold'):
+                    attributes.append(f"fb={model.fallback_threshold}")
+                    attributes.append(f"rb={model.rollback_threshold}")
+                
+                results_file = f"{'_'.join(attributes)}.json"
+
+                with open(f"{results_dir}/{results_file}", "w") as f:
+                    json.dump(translations, f, indent=4)
 
     return results

@@ -1,5 +1,5 @@
 python plot_train_curves.py \
---trainer_state /homes/iws/paulh27/CSE481N/CSE481N_Project/data/trainer_state_wmt_aligned.json \
---metric eval_bleu \
---dataset_name wmt \
---out_dir /homes/iws/paulh27/CSE481N/CSE481N_Project/out/val_curves
+--trainer_state /local1/hfs/CSE481N_Project/data/trainer_states/iswslt_aligned_small.json \
+--metric bleu \
+--dataset_name iwslt \
+--out_dir /local1/hfs/CSE481N_Project/results/val_curves

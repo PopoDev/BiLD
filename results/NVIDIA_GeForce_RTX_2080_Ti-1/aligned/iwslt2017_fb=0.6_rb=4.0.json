@@ -1,10 +1,11 @@
 {
     "eval_loss": 1.8289645910263062,
-    "eval_bleu": 39.1544,
-    "eval_gen_len": 28.8119,
-    "eval_runtime": 686.0869,
-    "eval_samples_per_second": 1.294,
-    "eval_steps_per_second": 1.294,
+    "eval_sacrebleu": 39.15438787775743,
+    "eval_meteor": 0.696843366380652,
+    "eval_gen_len": 28.811936936936938,
+    "eval_runtime": 695.2556,
+    "eval_samples_per_second": 1.277,
+    "eval_steps_per_second": 1.277,
     "eval_samples": 888,
     "fallback_percentage": 5.915591754023616,
     "rollback_percentage": 0.9664471376797474

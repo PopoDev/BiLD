@@ -17,6 +17,8 @@ Here's the key underlying idea:
 
 # Reproduction
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/PopoDev/CSE481N_Project/blob/main/run.ipynb)
+
 ## Requirements
 
 Install the required packages using the following command:
@@ -27,23 +29,45 @@ pip install -r requirements.txt
 
 ## Evaluation
 
-We provide the scripts to evaluate the pretrained models on the datasets used in the paper.
+We provide the scripts to evaluate the pretrained models on the datasets used in the paper. The scripts are located in the root directory and follow the naming convention `run_<experiment>.sh`.
+
+```bash
+# Syntax for running experiments
+bash ./run_<experiment>.sh [model] [fallback_threshold] [rollback_threshold] [max_eval_samples]
+```
+
+Arguments
+- `model`: Specifies the model configuration to use. Possible values are:
+    - vanilla: Uses only the large model.
+    - unaligned: Uses BiLD with a large model and small model.
+    - aligned: Uses BilD with a large model and small aligned model.
+- `fallback_threshold`: (Optional) Specifies the fallback threshold for the small model. Values can range from [0.1, 0.9].
+- `rollback_threshold`: (Optional) Specifies the rollback threshold for the large model. Values can range from [1, 10].
+- `max_eval_samples`: (Optional) Specifies the maximum number of samples to evaluate.
 
 ### Translation
 
 To evaluate the pretrained models on the translation datasets, run the following command:
 
 ```bash
-# IWSLT2017 with unaligned model
-CUDA_VISIBLE_DEVICES=0 ./run_iwslt2017_unaligned.sh
+# IWSLT2017 with vanilla model
+CUDA_VISIBLE_DEVICES=0 bash run_iwslt2017.sh vanilla
 
-# WMT2014 with aligned model
-CUDA_VISIBLE_DEVICES=0 ./run_wmt2014_aligned.sh
+# WMT2014 with BiLD unaligned model
+CUDA_VISIBLE_DEVICES=0 bash run_wmt2014.sh unaligned
 ```
 
 ### Summarization
 
-We will provide the scripts to evaluate the pretrained models on the summarization datasets soon.
+To evaluate the pretrained models on the summarization datasets, run the following command:
+
+```bash
+# XSUM with BiLD aligned model
+CUDA_VISIBLE_DEVICES=0 bash run_xsum.sh aligned
+
+# CNNDM with BiLD aligned model with (FB, RB)=(0.5, 5.0) over 10 samples
+CUDA_VISIBLE_DEVICES=0 bash run_cnndm.sh aligned 0.5 5 10
+```
 
 ## Results
 
@@ -58,27 +82,47 @@ We will provide the scripts to evaluate the pretrained models on the summarizati
 |            | 39.13 | 1.78×   | (4, 0.6) | 30.33  | 1.70×   | (5, 0.6) | 33.95  | 1.80×   | (5, 0.4) | 40.96  | 2.12×   | (6, 0.2) |
 
 
-### IWSLT2017
+### Reproduction 
 
-| IWSLT2017           | Original           | Reproduction        |
-|---------------------|--------------------|---------------------|
-| BiLD (unaligned)    | 40.33 & 1.43x      | 40.33 & 1.46x       |
-| BiLD (aligned)      | 40.24 & 1.62x      | 40.09 & 1.52x       |
+| IWSLT2017          | Thresholds | Original           | Reproduction       |
+|--------------------|------------|--------------------|--------------------|
+| BiLD (unaligned)   | (2, 0.6)   | 40.33 & 1.43x      | 40.33 & 1.46x      |
+|                    | (3, 0.5)   | 39.44 & 1.58x      | 39.44 & 1.61x      |
+| BiLD (aligned)     | (3, 0.9)   | 40.24 & 1.62x      | 40.09 & 1.52x      |
+|                    | (4, 0.6)   | 39.13 & 1.62x      | 39.15 & 1.73x      |
 
-- For the unaligned model, we were able to reproduce the BLEU score of 40.33 with a speedup of 1.46x using RB, FB= (2, 0.6).
-- For the aligned model, we were able to reproduce the BLEU score of 40.09 with a speedup of 1.52x using RB, FB= (3, 0.9).
+- For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
+- For the speedup, we were able to reproduce the results within 5% of the reported values.
 
-### WMT2014
+| WMT14              | Thresholds | Original      | Reproduction  |
+|--------------------|------------|---------------|---------------|
+| BiLD (unaligned)   | (2, 0.6)   | 31.28 & 1.34× | 31.65 & 1.27× |
+|                    | (3, 0.5)   | 30.47 & 1.43× | 30.83 & 1.34× |
+| BiLD (aligned)     | (2, 0.8)   | 31.26 & 1.47× | 31.65 & 1.37× |
+|                    | (5, 0.6)   | 30.33 & 1.70× | 30.54 & 1.65× |
 
-We will provide the results for the WMT2014 dataset soon.
+- For the BLUE scores, we were able to reproduce the results within 1% of the original scores.
+- For the speedup, we were able to reproduce the results within 10% of the reported values.
 
-### XSUM
+| XSUM           | Thresholds | Original | Reproduction |
+|----------------|------------|----------|--------------|
+| BiLD (unaligned) | (3, 0.5)  | 35.12 & 1.48× | 35.12 & 1.40× |
+|                  | (5, 0.3)  | 34.02 & 1.72× | 34.02 & 1.54× |
+| BiLD (aligned)   | (2, 0.6)  | 35.05 & 1.50× | 34.96 & 1.41× |
+|                  | (5, 0.4)  | 33.95 & 1.80× | 33.96 & 1.73× |
 
-We will provide the results for the XSUM dataset soon.
+- For the ROUGE-L scores, we were able to reproduce the results within 1% of the original scores.
+- For the speedup, we were able to reproduce the results within 10% of the reported values.
 
-### CNNDM
+| CNNDM           | Thresholds | Original | Reproduction |
+|-----------------|------------|----------|--------------|
+| BiLD (unaligned) | (3, 0.4)  | 41.44 & 1.71× | 41.44 & 1.54× |
+|                  | (6, 0.2)  | 40.57 & 2.05× | 40.56 & 1.87× |
+| BiLD (aligned)   | (3, 0.3)  | 41.52 & 1.85× | 41.33 & 1.48× |
+|                  | (6, 0.2)  | 40.96 & 2.12× | 40.79 & 1.67× |
 
-We will provide the results for the CNNDM dataset soon.
+- For the ROUGE-L scores, we were able to reproduce the results within 1% of the original scores.
+- For the speedup, we were able to reproduce the results within 20% of the reported values.
 
 ## Pretrained Checkpoints
 
@@ -102,4 +146,37 @@ The authors provided the finetuned checkpoints used in the paper.
 | CNNDM    |  T5-large  |  [link](https://huggingface.co/kssteven/T5-large-cnndm) | 
 
 ### Aligned Models
-We are currently training our own aligned models to reproduce the methodology used in the paper. We will provide the links to the checkpoints once they are available.
+We trained our own aligned models using the outputs of the authors' large finetuned models on each of the four benchmarks. We prove the links to these aligned models below.
+
+| Benchmark for Alignment | Link |
+| ----------------- | ---- |
+| IWSLT-2017-De-En  | [link](https://huggingface.co/paulh27/iwslt_aligned_smallT5_cont0) |
+| WMT-2014-De-En    | [link](https://huggingface.co/paulh27/wmt_aligned_smallmT5) |
+| XSUM              | [link](https://huggingface.co/paulh27/xsum_aligned_smallmT5) |
+| CNNDM             | [link](https://huggingface.co/paulh27/cnn_aligned_smallT5) |
+
+### Alignment Datasets
+The general idea of alignment is to align the predictions produced by the small and large models. As part of this process, we require a calibration dataset for each benchmark which represents the output sentence distribution of the large model. Then, we fine-tune the small model on this dataset so that it will better follow the output distribution of the large model. To create the calibration dataset for a particular benchmark, we take the inputs of the benchmark dataset and generate the corresponding output sequence using the large model, which creates the (input, output) dataset samples. 
+
+The authors did not open source the calibration datasets. As such, we had to create these ourselves, which we link below.
+
+| Calibration Dataset | Link |
+| ----------------- | ---- |
+| IWSLT-2017-De-En  | [link](https://huggingface.co/datasets/paulh27/alignment_iwslt2017_de_en) |
+| WMT-2014-De-En    | [link](https://huggingface.co/datasets/paulh27/alignment_wmt2014_de_en) |
+| XSUM              | [link](https://huggingface.co/datasets/lilferrit/xsum_t5_distillation) |
+| CNNDM             | [link](https://huggingface.co/datasets/lilferrit/cnn_dailymail_t5_distillation) |
+
+## Further Extensions
+As part of the reproduction, we additionally conducted several experiments not done in the paper to probe the robustness of the Big-Little decoding architecture. 
+
+### Code API Generation Task
+As an additional experiment, we tested Big Little Decoder on a Code API Generation task availabe on GitHub [CodeTrans](https://github.com/agemagician/CodeTrans). The dataset is published on Huggingface and can be found [here](https://huggingface.co/datasets/paulh27/java_code_api_generation). We used the pretrained [small](https://huggingface.co/SEBIS/code_trans_t5_small_api_generation_transfer_learning_finetune) and [large](https://huggingface.co/SEBIS/code_trans_t5_large_api_generation_transfer_learning_finetune) T5 models given by the authors.
+
+```bash
+# API Generation with BiLD unaligned model
+CUDA_VISIBLE_DEVICES=0 bash run_api.sh unaligned
+```
+
+
+

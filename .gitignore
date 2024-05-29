@@ -167,4 +167,3 @@ cache/*
 
 # Huggingface stuff
 .lock
-data/
