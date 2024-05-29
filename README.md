@@ -27,18 +27,32 @@ pip install -r requirements.txt
 
 ## Evaluation
 
-We provide the scripts to evaluate the pretrained models on the datasets used in the paper.
+We provide the scripts to evaluate the pretrained models on the datasets used in the paper. The scripts are located in the root directory and follow the naming convention `run_<experiment>.sh`.
+
+```bash
+# Syntax for running experiments
+bash ./run_<experiment>.sh [model] [fallback_threshold] [rollback_threshold] [max_eval_samples]
+```
+
+Arguments
+- `model`: Specifies the model configuration to use. Possible values are:
+    - vanilla: Uses the only the large model
+    - unaligned: Uses BiLD with a large model and small model
+    - aligned: Uses BilD with a large model and small aligned model
+- `fallback_threshold`: (Optional) Specifies the fallback threshold for the small model. Values can range from [0.1, 0.9].
+- `rollback_threshold`: (Optional) Specifies the rollback threshold for the large model. Values can range from [1, 10].
+- `max_eval_samples`: (Optional) Specifies the maximum number of samples to evaluate.
 
 ### Translation
 
 To evaluate the pretrained models on the translation datasets, run the following command:
 
 ```bash
-# IWSLT2017 with unaligned model
-CUDA_VISIBLE_DEVICES=0 ./run_iwslt2017_unaligned.sh
+# IWSLT2017 with vanilla model
+CUDA_VISIBLE_DEVICES=0 bash run_iwslt2017.sh vanilla
 
-# WMT2014 with aligned model
-CUDA_VISIBLE_DEVICES=0 ./run_wmt2014_aligned.sh
+# WMT2014 with BiLD unaligned model
+CUDA_VISIBLE_DEVICES=0 bash run_wmt2014.sh unaligned
 ```
 
 ### Summarization
@@ -46,11 +60,11 @@ CUDA_VISIBLE_DEVICES=0 ./run_wmt2014_aligned.sh
 To evaluate the pretrained models on the summarization datasets, run the following command:
 
 ```bash
-# XSUM vanilla model
-CUDA_VISIBLE_DEVICES=0 ./run_xsum_vanilla.sh
+# XSUM with BiLD aligned model
+CUDA_VISIBLE_DEVICES=0 bash run_xsum.sh aligned
 
-# CNNDM with aligned model
-CUDA_VISIBLE_DEVICES=0 ./run_cnndm_aligned.sh
+# CNNDM with BiLD aligned model with (RB, FB)=(3, 0.3) over 10 samples
+CUDA_VISIBLE_DEVICES=0 bash run_cnndm.sh aligned 0.5 5 10
 ```
 
 ## Results
