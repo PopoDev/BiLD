@@ -17,6 +17,8 @@ Here's the key underlying idea:
 
 # Reproduction
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/PopoDev/CSE481N_Project/blob/main/run.ipynb)
+
 ## Requirements
 
 Install the required packages using the following command:
