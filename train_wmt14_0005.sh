@@ -1,17 +1,18 @@
 huggingface-cli login --token "$1"
 
-export CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=1
 export TOKENIZERS_PARALLELISM=false
 
 python src/training/run_translation.py \
-    --output_dir /local1/hfs/gs_stuff/ft-wmt14 \
+    --output_dir /local1/hfs/gs_stuff/ft-wmt14-5 \
     --cache_dir /local1/hfs/gs_stuff/cache \
     --model_name_or_path google/mt5-small \
+    --resume_from_checkpoint /local1/hfs/gs_stuff/ft-wmt14-5/checkpoint-60000 \
     --tokenizer_name google/mt5-small \
     --dataset_name lilferrit/wmt14-short \
     --source_lang de \
     --target_lang en \
-    --learning_rate 0.0002 \
+    --learning_rate 0.0005 \
     --gradient_accumulation_steps 2 \
     --per_device_train_batch_size 8 \
     --per_device_eval_batch_size 8 \

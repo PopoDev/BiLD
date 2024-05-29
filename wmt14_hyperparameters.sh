@@ -14,8 +14,7 @@ for lr in "${learning_rates[@]}"; do
         --cache_dir /local1/hfs/gs_stuff/cache \
         --model_name google-t5/t5-small \
         --tokenizer_name google-t5/t5-small \
-        --dataset_name wmt14 \
-        --dataset_config_name de-en \
+        --dataset_name lilferrit/wmt14-short \
         --source_lang de \
         --target_lang en \
         --learning_rate "${lr}" \
@@ -23,21 +22,21 @@ for lr in "${learning_rates[@]}"; do
         --per_device_train_batch_size 8 \
         --per_device_eval_batch_size 8 \
         --save_total_limit 10 \
-        --max_steps 5000 \
+        --max_steps 10000 \
         --predict_with_generate \
         --push_to_hub \
         --generation_max_length 200 \
         --dataloader_pin_memory \
         --dataloader_num_workers 4 \
-        --logging_steps 5000 \
+        --logging_steps 10000 \
         --disable_tqdm False \
         --save_strategy steps \
-        --save_steps 5000 \
+        --save_steps 10000 \
         --do_train \
         --source_prefix 'translate German to English: ' \
         --overwrite_output_dir \
         --evaluation_strategy steps \
-        --eval_steps 5000 \
+        --eval_steps 10000 \
         --metric_for_best_model bleu \
         --load_best_model_at_end \
 
