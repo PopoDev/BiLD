@@ -7,7 +7,7 @@ max_eval_samples=${4:-888}  # debug
 
 case "$model" in
     aligned | unaligned)
-        model_name_small="kssteven/mT5-small-iwslt2017-de-en-bild"
+        model_name_small="kssteven/mT5-small-iwslt2017-de-en"
         if [ "$model" == "aligned" ]; then
             model_name_small="kssteven/mT5-small-iwslt2017-de-en-bild-aligned"
         fi
