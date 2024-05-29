@@ -1,11 +1,12 @@
 {
-    "eval_loss": 1.1756054162979126,
-    "eval_bleu": 40.1431,
-    "eval_gen_len": 28.8536,
-    "eval_runtime": 1067.8778,
-    "eval_samples_per_second": 0.832,
-    "eval_steps_per_second": 0.832,
+    "eval_loss": 1.1784356832504272,
+    "eval_sacrebleu": 40.39642342200499,
+    "eval_meteor": 0.7065261602386474,
+    "eval_gen_len": 29.06644144144144,
+    "eval_runtime": 1147.4716,
+    "eval_samples_per_second": 0.774,
+    "eval_steps_per_second": 0.774,
     "eval_samples": 888,
-    "fallback_percentage": 44.174796420220915,
-    "rollback_percentage": 0.29831492380875596
+    "fallback_percentage": 44.26485297059412,
+    "rollback_percentage": 0.2960592118423685
 }
