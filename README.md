@@ -36,9 +36,9 @@ bash ./run_<experiment>.sh [model] [fallback_threshold] [rollback_threshold] [ma
 
 Arguments
 - `model`: Specifies the model configuration to use. Possible values are:
-    - vanilla: Uses the only the large model
-    - unaligned: Uses BiLD with a large model and small model
-    - aligned: Uses BilD with a large model and small aligned model
+    - vanilla: Uses only the large model.
+    - unaligned: Uses BiLD with a large model and small model.
+    - aligned: Uses BilD with a large model and small aligned model.
 - `fallback_threshold`: (Optional) Specifies the fallback threshold for the small model. Values can range from [0.1, 0.9].
 - `rollback_threshold`: (Optional) Specifies the rollback threshold for the large model. Values can range from [1, 10].
 - `max_eval_samples`: (Optional) Specifies the maximum number of samples to evaluate.
@@ -63,7 +63,7 @@ To evaluate the pretrained models on the summarization datasets, run the followi
 # XSUM with BiLD aligned model
 CUDA_VISIBLE_DEVICES=0 bash run_xsum.sh aligned
 
-# CNNDM with BiLD aligned model with (RB, FB)=(3, 0.3) over 10 samples
+# CNNDM with BiLD aligned model with (FB, RB)=(0.5, 5.0) over 10 samples
 CUDA_VISIBLE_DEVICES=0 bash run_cnndm.sh aligned 0.5 5 10
 ```
 
@@ -168,7 +168,13 @@ The authors did not open source the calibration datasets. As such, we had to cre
 ## Further Extensions
 As part of the reproduction, we additionally conducted several experiments not done in the paper to probe the robustness of the Big-Little decoding architecture. 
 
-### Ablation on 
+### Code API Generation Task
+As an additional experiment, we tested Big Little Decoder on a Code API Generation task availabe on GitHub [CodeTrans](https://github.com/agemagician/CodeTrans). The dataset is published on Huggingface and can be found [here](https://huggingface.co/datasets/paulh27/java_code_api_generation). We used the pretrained [small](https://huggingface.co/SEBIS/code_trans_t5_small_api_generation_transfer_learning_finetune) and [large](https://huggingface.co/SEBIS/code_trans_t5_large_api_generation_transfer_learning_finetune) T5 models given by the authors.
+
+```bash
+# API Generation with BiLD unaligned model
+CUDA_VISIBLE_DEVICES=0 bash run_api.sh unaligned
+```
 
 
 
