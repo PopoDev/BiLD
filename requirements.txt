@@ -10,3 +10,4 @@ rouge_score
 nltk
 pandas
 matplotlib
+seaborn

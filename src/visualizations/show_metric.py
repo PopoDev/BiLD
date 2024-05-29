@@ -3,6 +3,8 @@ import re
 import json
 import argparse
 import matplotlib.pyplot as plt
+import seaborn as sns
+sns.set_style('whitegrid')
 
 SPEED_METRIC = 'eval_samples_per_second'
 RESULTS_DIR = 'results/'
@@ -95,57 +97,52 @@ def get_measure(speedup):
 
 def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
     vanilla_data, aligned_data, unaligned_data = load_data(experiment, hardware, best)
+    bild_data = aligned_data if args.aligned else unaligned_data
     metric_keys, metric_labels = get_metric(experiment)
     measure_func, measure_label = get_measure(speedup)
 
     fig, ax1 = plt.subplots(figsize=(10, 6))
-    plt.title(f"{TITLES[experiment]} {measure_label}")
+    plt.title(f"{TITLES[experiment]} {'Aligned' if args.aligned else 'Unaligned'} BiLD Generation Quality", fontsize=20, fontweight='bold')
     plt.xlabel(f"{measure_label}")
 
     ax1.set_ylabel(metric_labels[0])
     ax1.axhline(y=vanilla_data[metric_keys[0]], color='blue', linestyle='--')
-    pt1 = ax1.scatter(1, vanilla_data[metric_keys[0]], color='blue', label=f"Vanilla {metric_labels[0]}", marker='x')
+    ax1.scatter(1, vanilla_data[metric_keys[0]], color='blue', label=f"Vanilla {metric_labels[0]}", marker='x')
 
-    lns1 = ax1.plot(
-        [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in aligned_data],
-        [data[metric_keys[0]] for data in aligned_data],
-        label=f"Aligned {metric_labels[0]}", marker='o', color='blue'
+    ax1.plot(
+        [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in bild_data],
+        [data[metric_keys[0]] for data in bild_data],
+        label=f"{'Aligned' if args.aligned else 'Unaligned'} {metric_labels[0]}", marker='o', color='blue'
     )
-
-    # lns1 = ax1.plot(
-    #     [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in unaligned_data],
-    #     [data[metric_keys[0]] for data in unaligned_data],
-    #     label=f"Unaligned {metric_labels[0]}", marker='s', color='blue'
-    # )
 
     # Create a second y-axis for METEOR
     ax2 = ax1.twinx()
     ax2.set_ylabel(metric_labels[1])
     ax2.axhline(y=vanilla_data[metric_keys[1]], color='red', linestyle='--')
-    pt2 = ax2.scatter(1, vanilla_data[metric_keys[1]], color='red', label=f"Vanilla {metric_labels[1]}", marker='x')
+    ax2.scatter(1, vanilla_data[metric_keys[1]], color='red', label=f"Vanilla {metric_labels[1]}", marker='x')
 
-    lns2 = ax2.plot(
-        [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in aligned_data],
-        [data[metric_keys[1]] for data in aligned_data],
-        label=f"Aligned {metric_labels[1]}", marker='o', linestyle="--", color='red'
+    ax2.plot(
+        [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in bild_data],
+        [data[metric_keys[1]] for data in bild_data],
+        label=f"{'Aligned' if args.aligned else 'Unaligned'} {metric_labels[1]}", marker='o', linestyle="--", color='red'
     )
-
-    # lns2 = ax2.plot(
-    #     [measure_func(vanilla_data[SPEED_METRIC], data[SPEED_METRIC]) for data in unaligned_data],
-    #     [data[metric_keys[1]] for data in unaligned_data],
-    #     label=f"Unaligned {metric_labels[1]}", marker='s', linestyle="--", color='red'
-    # )
 
     ax1.legend(loc='lower right', bbox_to_anchor=(1, 0.1))
     ax2.legend(loc='lower right')
 
     plt.tight_layout()
     plt.legend()
-    plt.savefig(RESULTS_DIR + f"{experiment}_{hardware}_metric_{'best_' + best if best else 'all'}.png")
+    file_name = f"{experiment}_{hardware}_metric_{'aligned' if args.aligned else 'unaligned'}_{'best_' + best if best else 'all'}"
+    if args.pdf:
+        plt.savefig(f"{file_name}.pdf", format="pdf")
+    else:
+        plt.savefig(RESULTS_DIR + f"{file_name}.png")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--experiment", type=str, default="iwslt2017", choices=["iwslt2017", "wmt14", "xsum", "cnn_dailymail"], help="Experiment to run.")
+    parser.add_argument("--aligned", action="store_true", default=False, help="Use aligned data.")
+    parser.add_argument("--pdf", action="store_true", default=False, help="Save as PDF.")
     args = parser.parse_args()
 
     show_performance(args.experiment, "rtx-2080", speedup=False)
