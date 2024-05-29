@@ -127,11 +127,14 @@ def show_performance(experiment, hardware="tesla-t4", speedup=True, best=None):
         label=f"{'Aligned' if args.aligned else 'Unaligned'} {metric_labels[1]}", marker='o', linestyle="--", color='red'
     )
 
-    ax1.legend(loc='lower right', bbox_to_anchor=(1, 0.1))
-    ax2.legend(loc='lower right')
+    ax1.grid(True)
+    ax2.grid(False)
+
+    lines, labels = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    plt.legend(lines + lines2, labels + labels2, loc='lower right', fontsize=24)
 
     plt.tight_layout()
-    plt.legend()
     file_name = f"{experiment}_{hardware}_metric_{'aligned' if args.aligned else 'unaligned'}_{'best_' + best if best else 'all'}"
     if args.pdf:
         plt.savefig(f"{file_name}.pdf", format="pdf")
