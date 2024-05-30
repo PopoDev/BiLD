@@ -26,7 +26,7 @@ esac
 
 python src/run_translation.py $model_args \
     --output_dir ./out/$model \
-    --tokenizer_name google-t5/t5-small \
+    --tokenizer_name google/mt5-small \
     --dataset_name iwslt2017 --dataset_config_name iwslt2017-de-en \
     --source_lang de --target_lang en \
     --num_beam 1 \

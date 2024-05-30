@@ -26,7 +26,7 @@ esac
 
 python src/run_translation.py $model_args \
     --output_dir ./out/$model \
-    --tokenizer_name google-t5/t5-small \
+    --tokenizer_name google/mt5-small \
     --dataset_name wmt14 --dataset_config_name de-en \
     --source_lang de --target_lang en \
     --num_beam 1 \
