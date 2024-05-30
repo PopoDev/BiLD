@@ -167,6 +167,26 @@ The authors did not open source the calibration datasets. As such, we had to cre
 | XSUM              | [link](https://huggingface.co/datasets/lilferrit/xsum_t5_distillation) |
 | CNNDM             | [link](https://huggingface.co/datasets/lilferrit/cnn_dailymail_t5_distillation) |
 
+## Self-trained small models
+
+In addition to using model checkpoints provided by the original paper, we also trained our own
+small models from scratch targeting a more complete reproduction of the performance pattern
+between aligned and unaligned models. The pattern in the original paper was that aligned models
+offer a larger speedup while having a marginal performance difference with the unaligned models.
+Despite only training our small models for 100,000 steps, compared to the 500,000 steps in the
+original paper, we were largely able to reproduce this pattern. A table showing the complete
+benchmarks of our small models can be found below. Our self trained models were trained and
+benchmarked on Nvidia RTX 2080 GPUs provided by the UW NLPG machines.
+
+|                  | Speedup | Fallback Percentage | Rollback Percentage | Rouge L / BLEU  |
+|------------------|---------|---------------------|---------------------|-----------------|
+| **XSum Vanilla** | NA      | NA                  | NA                  | 35.10 (Rouge L) |
+| **XSum Aligned** | 1.62x   | 10.90%              | 4.125%              | 34.28 (Rouge L) |
+| **XSum Unaligned** | 1.35x   | 30.43%              | 3.008%              | 34.26 (Rouge L) |
+| **WMT14 Vanilla** | NA      | NA                  | NA                  | 31.88 (BLEU)    |
+| **WMT14 Aligned** | 1.60x   | 3.230%              | 2.327%              | 28.71 (BLEU)    |
+| **WMT14 Unaligned** | 1.41x   | 16.36%              | 2.359%              | 27.81 (BLEU)    |
+
 ## Further Extensions
 As part of the reproduction, we additionally conducted several experiments not done in the paper to probe the robustness of the Big-Little decoding architecture. 
 
